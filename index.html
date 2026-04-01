@@ -76,7 +76,7 @@
 
   /* Source chips */
   .source-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border2); background: transparent; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; user-select: none; }
+  .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border2); background: transparent; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; user-select: none; line-height: 1.6; }
   .chip:hover { border-color: var(--purple); color: var(--purple2); }
   .chip.active { background: var(--tag-bg); border-color: var(--purple); color: var(--purple2); }
   .chip .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
@@ -212,7 +212,7 @@
   .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; max-width: 860px; width: 100%; max-height: 90vh; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; transform: scale(0.96); transition: transform 0.2s; }
   .modal-overlay.open .modal { transform: scale(1); }
   .modal-img-pane { background: var(--bg3); border-radius: 16px 0 0 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 320px; }
-  .modal-img-pane img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .modal-img-pane img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.2s; }
   .modal-info-pane { padding: 28px 28px 24px; display: flex; flex-direction: column; gap: 20px; }
   .modal-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .modal-source-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--purple2); background: var(--tag-bg); padding: 4px 10px; border-radius: 6px; }
@@ -276,7 +276,7 @@
 
   <header>
     <div class="logo">Lumi<span>nary</span></div>
-    <div class="tagline">Free-to-use images for education — no attribution required</div>
+    <div class="tagline">Free-to-use images for education — most require no attribution</div>
   </header>
 
   <!-- Search Panel -->
@@ -297,10 +297,10 @@
       <div class="control-group">
         <label>Sources</label>
         <div class="source-chips">
-          <div class="chip active" id="chip-pexels" onclick="toggleChip('pexels')"><span class="dot dot-pexels"></span>Pexels</div>
-          <div class="chip active" id="chip-unsplash" onclick="toggleChip('unsplash')"><span class="dot dot-unsplash"></span>Unsplash</div>
-          <div class="chip active" id="chip-pixabay" onclick="toggleChip('pixabay')"><span class="dot dot-pixabay"></span>Pixabay</div>
-          <div class="chip active" id="chip-openverse" onclick="toggleChip('openverse')"><span class="dot dot-openverse"></span>Openverse</div>
+          <button class="chip active" id="chip-pexels" onclick="toggleChip('pexels')"><span class="dot dot-pexels"></span>Pexels</button>
+          <button class="chip active" id="chip-unsplash" onclick="toggleChip('unsplash')"><span class="dot dot-unsplash"></span>Unsplash</button>
+          <button class="chip active" id="chip-pixabay" onclick="toggleChip('pixabay')"><span class="dot dot-pixabay"></span>Pixabay</button>
+          <button class="chip active" id="chip-openverse" onclick="toggleChip('openverse')"><span class="dot dot-openverse"></span>Openverse</button>
         </div>
       </div>
 
@@ -308,7 +308,7 @@
       <div class="control-group">
         <label>Size</label>
         <div class="size-preset-row">
-          <button class="preset-btn active" id="psz-large" onclick="setPreset('large')">Compact</button>
+          <button class="preset-btn active" id="psz-large" onclick="setPreset('large')">Large</button>
           <button class="preset-btn" id="psz-original" onclick="setPreset('original')">Original</button>
         </div>
       </div>
@@ -402,10 +402,12 @@ let currentQuery = '';
 let pageState = {};       // per-source current page
 let exhausted = {};       // per-source: true when no more pages
 let totalLoaded = 0;
+let sourceCounts = {};    // per-source loaded count
+let isSearching = false;  // prevents duplicate searches
 const PER_SOURCE = 13;    // ~13 × 4 sources = ~52 per load
 
 const PRESETS = {
-  large:    { label: 'Compact' },
+  large:    { label: 'Large' },
   original: { label: 'Original' },
 };
 
@@ -443,14 +445,16 @@ function setViewMode(mode) {
 // ---- Search (fresh) ----
 async function doSearch() {
   const q = document.getElementById('searchQuery').value.trim();
-  if (!q) return;
+  if (!q || isSearching) return;
   if (!Object.values(activeSources).some(v => v)) { showError('Select at least one source.'); return; }
   clearError();
 
   // Reset pagination
+  isSearching = true;
   currentQuery = q;
   pageState = { pexels: 1, unsplash: 1, pixabay: 1, openverse: 1 };
   exhausted = { pexels: false, unsplash: false, pixabay: false, openverse: false };
+  sourceCounts = { pexels: 0, unsplash: 0, pixabay: 0, openverse: 0 };
   totalLoaded = 0;
 
   showLoading();
@@ -460,10 +464,13 @@ async function doSearch() {
   renderBatch(all, true);
   if (errors.length) showError(errors.map(e => e.message || String(e)).join(' · '));
   updateUI(all.length, q);
+  isSearching = false;
 }
 
 // ---- Load more ----
 async function loadMore() {
+  if (isSearching) return;
+  isSearching = true;
   const btn = document.getElementById('loadMoreBtn');
   if (btn) { btn.textContent = 'Loading…'; btn.disabled = true; }
   clearError();
@@ -471,6 +478,16 @@ async function loadMore() {
   renderBatch(all, false);
   if (errors.length) showError(errors.map(e => e.message || String(e)).join(' · '));
   updateUI(all.length, currentQuery);
+  isSearching = false;
+}
+
+// ---- Fisher-Yates shuffle ----
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 // ---- Fetch one page across active sources ----
@@ -486,15 +503,15 @@ async function fetchPage(q) {
   results.forEach(r => {
     if (r.status === 'fulfilled') {
       all.push(...r.value.items);
-      // Advance page, mark exhausted if fewer results than requested
       const src = r.value.source;
       pageState[src]++;
+      sourceCounts[src] = (sourceCounts[src] || 0) + r.value.items.length;
       if (r.value.items.length < PER_SOURCE) exhausted[src] = true;
     } else {
       errors.push(r.reason);
     }
   });
-  all.sort(() => Math.random() - 0.5);
+  shuffle(all);
   return { all, errors };
 }
 
@@ -515,7 +532,7 @@ async function fetchPexels(q, page) {
 }
 
 async function fetchUnsplash(q, page) {
-  const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}&client_id=${KEY_UNSPLASH}`);
+  const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}&content_filter=high&client_id=${KEY_UNSPLASH}`);
   if (!res.ok) throw new Error('Unsplash: ' + res.status);
   const data = await res.json();
   const items = (data.results || []).map(p => ({
@@ -545,7 +562,7 @@ async function fetchPixabay(q, page) {
 }
 
 async function fetchOpenverse(q, page) {
-  const res = await fetch(`https://api.openverse.org/v1/images/?q=${encodeURIComponent(q)}&page_size=${PER_SOURCE}&page=${page}&license_type=commercial`);
+  const res = await fetch(`https://api.openverse.org/v1/images/?q=${encodeURIComponent(q)}&page_size=${PER_SOURCE}&page=${page}&license_type=commercial,modification`);
   if (!res.ok) throw new Error('Openverse: ' + res.status);
   const data = await res.json();
   const items = (data.results || []).map(p => {
@@ -629,21 +646,29 @@ function updateUI(batchSize, q) {
     header.style.display = 'flex';
   }
 
-  document.getElementById('resultsCount').innerHTML = '<strong>' + totalLoaded + '</strong> images loaded';
+  // Build per-source breakdown
+  const breakdown = Object.keys(sourceCounts)
+    .filter(src => sourceCounts[src] > 0)
+    .map(src => src.charAt(0).toUpperCase() + src.slice(1) + ' ' + sourceCounts[src])
+    .join(' · ');
+  document.getElementById('resultsCount').innerHTML =
+    '<strong>' + totalLoaded + '</strong> images loaded' + (breakdown ? ' &nbsp;—&nbsp; ' + breakdown : '');
 
-  // Remove existing load-more button
-  const existing = document.getElementById('loadMoreBtn');
-  if (existing) existing.remove();
-
-  // Check if any source still has more pages
+  // Manage load-more button (reuse if exists)
   const anyMore = Object.keys(activeSources).some(src => activeSources[src] && !exhausted[src]);
+  let btn = document.getElementById('loadMoreBtn');
   if (anyMore && totalLoaded > 0) {
-    const btn = document.createElement('button');
-    btn.id = 'loadMoreBtn';
-    btn.className = 'btn-load-more';
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'loadMoreBtn';
+      btn.className = 'btn-load-more';
+      btn.onclick = loadMore;
+      document.querySelector('.app').appendChild(btn);
+    }
     btn.textContent = 'Load more images';
-    btn.onclick = loadMore;
-    document.querySelector('.app').appendChild(btn);
+    btn.disabled = false;
+  } else if (btn) {
+    btn.remove();
   }
 }
 
@@ -692,10 +717,12 @@ function updateModalUrl() {
   if (!currentModal) return;
   const url = currentModal.srcSet[activeModalSize] || currentModal.srcSet.original;
   document.getElementById('modalUrl').value = url;
-  document.getElementById('modalImg').src = url || currentModal.thumb;
+  const imgEl = document.getElementById('modalImg');
+  imgEl.style.opacity = '0.5';
+  imgEl.src = url || currentModal.thumb;
+  imgEl.onload = () => { imgEl.style.opacity = '1'; };
   const dlLink = document.getElementById('modalDownload');
   dlLink.href = url;
-  // Set a meaningful filename for generated images
   if (currentModal.filename) {
     dlLink.setAttribute('download', currentModal.filename);
   } else {
