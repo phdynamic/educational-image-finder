@@ -59,22 +59,6 @@
   .logo span { color: var(--purple); }
   .tagline { font-size: 13px; color: var(--muted); font-weight: 300; letter-spacing: 0.02em; }
 
-  /* ---- Keys Panel ---- */
-  .keys-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; }
-  .keys-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
-  .keys-header h3 { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; color: var(--purple2); }
-  .keys-toggle { font-size: 12px; color: var(--muted); }
-  .keys-body { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .keys-body.hidden { display: none; }
-  .key-field label { display: block; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
-  .key-field input { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 9px 12px; outline: none; transition: border-color 0.2s; }
-  .key-field input:focus { border-color: var(--purple3); }
-  .key-note { margin-top: 12px; font-size: 12px; color: var(--text3); line-height: 1.5; }
-  .key-note a { color: var(--purple); text-decoration: none; }
-  .key-note a:hover { text-decoration: underline; }
-  .key-saved { display: inline-block; font-size: 11px; color: var(--success); margin-left: 8px; opacity: 0; transition: opacity 0.3s; }
-  .key-saved.show { opacity: 1; }
-
   /* ---- Search Area ---- */
   .search-area { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 16px; }
   .search-row { display: flex; gap: 10px; align-items: stretch; }
@@ -290,7 +274,6 @@
   @media (max-width: 640px) {
     .modal { grid-template-columns: 1fr; }
     .modal-img-pane { border-radius: 16px 16px 0 0; min-height: 200px; }
-    .keys-body { grid-template-columns: 1fr; }
     #resultsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 </style>
@@ -302,39 +285,6 @@
     <div class="logo">Lumi<span>nary</span></div>
     <div class="tagline">Free-to-use images for education — no attribution required</div>
   </header>
-
-  <!-- API Keys Panel -->
-  <div class="keys-panel">
-    <div class="keys-header" onclick="toggleKeys()">
-      <h3>&#x1F511; API Keys <span class="key-saved" id="keySaved">Saved</span></h3>
-      <span class="keys-toggle" id="keysToggleLabel">Show</span>
-    </div>
-    <div class="keys-body hidden" id="keysBody">
-      <div class="key-field">
-        <label>Pexels API Key</label>
-        <input type="password" id="keyPexels" placeholder="Paste your Pexels key..." oninput="saveKeys()">
-      </div>
-      <div class="key-field">
-        <label>Unsplash Access Key</label>
-        <input type="password" id="keyUnsplash" placeholder="Paste your Unsplash key..." oninput="saveKeys()">
-      </div>
-      <div class="key-field">
-        <label>Pixabay API Key</label>
-        <input type="password" id="keyPixabay" placeholder="Paste your Pixabay key..." oninput="saveKeys()">
-      </div>
-      <div class="key-field">
-        <label>Openverse — No key needed</label>
-        <input type="text" value="Public API (no key required)" disabled style="opacity:0.5;cursor:default;">
-      </div>
-      <div class="key-note" style="grid-column:span 2;">
-        Get free API keys:
-        <a href="https://www.pexels.com/api/" target="_blank">Pexels</a> &nbsp;·&nbsp;
-        <a href="https://unsplash.com/developers" target="_blank">Unsplash</a> &nbsp;·&nbsp;
-        <a href="https://pixabay.com/api/docs/" target="_blank">Pixabay</a> &nbsp;·&nbsp;
-        All three are free for educational use. Keys are stored in your browser only.
-      </div>
-    </div>
-  </div>
 
   <!-- Search Area -->
   <div class="search-area">
@@ -482,27 +432,10 @@ const PRESETS = {
   original: { label: 'Original' },
 };
 
-// ---- Keys ----
-function saveKeys() {
-  localStorage.setItem('lumi_pexels',   document.getElementById('keyPexels').value);
-  localStorage.setItem('lumi_unsplash', document.getElementById('keyUnsplash').value);
-  localStorage.setItem('lumi_pixabay',  document.getElementById('keyPixabay').value);
-  const s = document.getElementById('keySaved');
-  s.classList.add('show');
-  setTimeout(() => s.classList.remove('show'), 1500);
-}
-function loadKeys() {
-  document.getElementById('keyPexels').value   = localStorage.getItem('lumi_pexels') || '';
-  document.getElementById('keyUnsplash').value = localStorage.getItem('lumi_unsplash') || '';
-  document.getElementById('keyPixabay').value  = localStorage.getItem('lumi_pixabay') || '';
-}
-function toggleKeys() {
-  const body = document.getElementById('keysBody');
-  const lbl  = document.getElementById('keysToggleLabel');
-  body.classList.toggle('hidden');
-  lbl.textContent = body.classList.contains('hidden') ? 'Show' : 'Hide';
-}
-loadKeys();
+// ---- API Keys (hardcoded) ----
+const KEY_PEXELS   = '1DQboNmA7nYSIxexbVctwCz6CrXEMEudhlCW5GxCw8C5tJfA1wf3DkKX';
+const KEY_UNSPLASH = 'dtzOYQ0iqydb5FdzbmJl72p2bW5l80QgyAHQkzNU8BY';
+const KEY_PIXABAY  = '18017390-57da3d02482166a97cd417d7d';
 
 // ---- Source toggles ----
 function toggleChip(src) {
@@ -594,9 +527,7 @@ async function fetchPage(q) {
 
 // ---- Per-source fetchers (return { source, items[] }) ----
 async function fetchPexels(q, page) {
-  const key = localStorage.getItem('lumi_pexels') || '';
-  if (!key) throw new Error('Pexels: no API key set.');
-  const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}`, { headers: { Authorization: key } });
+  const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}`, { headers: { Authorization: KEY_PEXELS } });
   if (!res.ok) throw new Error('Pexels: ' + res.status);
   const data = await res.json();
   const items = (data.photos || []).map(p => ({
@@ -611,9 +542,7 @@ async function fetchPexels(q, page) {
 }
 
 async function fetchUnsplash(q, page) {
-  const key = localStorage.getItem('lumi_unsplash') || '';
-  if (!key) throw new Error('Unsplash: no API key set.');
-  const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}&client_id=${key}`);
+  const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}&client_id=${KEY_UNSPLASH}`);
   if (!res.ok) throw new Error('Unsplash: ' + res.status);
   const data = await res.json();
   const items = (data.results || []).map(p => ({
@@ -628,9 +557,7 @@ async function fetchUnsplash(q, page) {
 }
 
 async function fetchPixabay(q, page) {
-  const key = localStorage.getItem('lumi_pixabay') || '';
-  if (!key) throw new Error('Pixabay: no API key set.');
-  const res = await fetch(`https://pixabay.com/api/?key=${key}&q=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}&safesearch=true`);
+  const res = await fetch(`https://pixabay.com/api/?key=${KEY_PIXABAY}&q=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}&safesearch=true`);
   if (!res.ok) throw new Error('Pixabay: ' + res.status);
   const data = await res.json();
   const items = (data.hits || []).map(p => ({
