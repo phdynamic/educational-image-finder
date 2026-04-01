@@ -86,17 +86,9 @@
   .dot-openverse { background: #e5a423; }
 
   /* Size controls */
-  .size-tabs { display: flex; border: 1px solid var(--border); border-radius: var(--radius2); overflow: hidden; }
-  .size-tab { padding: 7px 16px; background: transparent; border: none; border-right: 1px solid var(--border); color: var(--text3); font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.15s; }
-  .size-tab:last-child { border-right: none; }
-  .size-tab.active { background: var(--tag-bg); color: var(--purple2); }
   .size-preset-row { display: flex; gap: 6px; flex-wrap: wrap; }
   .preset-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text3); font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.15s; }
   .preset-btn.active, .preset-btn:hover { border-color: var(--purple3); color: var(--purple2); background: var(--tag-bg); }
-  .custom-dims { display: flex; gap: 8px; align-items: center; }
-  .custom-dims input { width: 80px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 7px 10px; outline: none; text-align: center; transition: border-color 0.2s; }
-  .custom-dims input:focus { border-color: var(--purple3); }
-  .custom-dims span { color: var(--muted); font-size: 13px; }
 
   .hidden { display: none !important; }
 
@@ -315,23 +307,9 @@
       <!-- Size -->
       <div class="control-group">
         <label>Size</label>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <div class="size-tabs">
-            <button class="size-tab active" id="tab-preset" onclick="setSizeMode('preset')">Preset</button>
-            <button class="size-tab" id="tab-custom" onclick="setSizeMode('custom')">Custom px</button>
-          </div>
-          <div id="preset-sizes" class="size-preset-row">
-            <button class="preset-btn" id="psz-small" onclick="setPreset('small')">Small</button>
-            <button class="preset-btn active" id="psz-medium" onclick="setPreset('medium')">Medium</button>
-            <button class="preset-btn" id="psz-large" onclick="setPreset('large')">Large</button>
-            <button class="preset-btn" id="psz-original" onclick="setPreset('original')">Original</button>
-          </div>
-          <div id="custom-sizes" class="custom-dims hidden">
-            <input type="number" id="customW" placeholder="Width" min="50" max="8000">
-            <span>×</span>
-            <input type="number" id="customH" placeholder="Height" min="50" max="8000">
-            <span style="color:var(--muted);font-size:12px;">px</span>
-          </div>
+        <div class="size-preset-row">
+          <button class="preset-btn active" id="psz-large" onclick="setPreset('large')">Compact</button>
+          <button class="preset-btn" id="psz-original" onclick="setPreset('original')">Original</button>
         </div>
       </div>
 
@@ -413,10 +391,10 @@
 <script>
 // ---- State ----
 let activeSources = { pexels: true, unsplash: true, pixabay: true, openverse: true };
-let sizeMode = 'preset';
-let activePreset = 'medium';
+
+let activePreset = 'large';
 let currentModal = null;
-let activeModalSize = 'medium';
+let activeModalSize = 'large';
 let viewMode = 'grid';
 
 // Pagination state
@@ -427,9 +405,7 @@ let totalLoaded = 0;
 const PER_SOURCE = 13;    // ~13 × 4 sources = ~52 per load
 
 const PRESETS = {
-  small:    { label: 'Small' },
-  medium:   { label: 'Medium' },
-  large:    { label: 'Large' },
+  large:    { label: 'Compact' },
   original: { label: 'Original' },
 };
 
@@ -448,13 +424,6 @@ function toggleChip(src) {
 }
 
 // ---- Size mode ----
-function setSizeMode(mode) {
-  sizeMode = mode;
-  document.getElementById('tab-preset').classList.toggle('active', mode === 'preset');
-  document.getElementById('tab-custom').classList.toggle('active', mode === 'custom');
-  document.getElementById('preset-sizes').classList.toggle('hidden', mode !== 'preset');
-  document.getElementById('custom-sizes').classList.toggle('hidden', mode !== 'custom');
-}
 function setPreset(p) {
   activePreset = p;
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
@@ -689,7 +658,7 @@ function showLoading() {
 // ---- Modal ----
 function openModal(img) {
   currentModal = img;
-  activeModalSize = sizeMode === 'preset' ? activePreset : 'original';
+  activeModalSize = activePreset;
   document.getElementById('modalSource').textContent = img.source;
   document.getElementById('modalTitle').textContent = img.title;
   document.getElementById('modalImg').src = img.thumb;
@@ -707,7 +676,7 @@ function openModal(img) {
   document.getElementById('modalAttrs').innerHTML = attrHtml;
   const sizeOpts = document.getElementById('modalSizeOptions');
   sizeOpts.innerHTML = '';
-  ['small','medium','large','original'].forEach(sz => {
+  ['large','original'].forEach(sz => {
     const btn = document.createElement('button');
     btn.className = 'sz-btn' + (sz === activeModalSize ? ' active' : '');
     btn.textContent = PRESETS[sz].label;
