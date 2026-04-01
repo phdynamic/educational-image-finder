@@ -271,55 +271,6 @@
   .btn-load-more:hover { background: var(--tag-bg); border-color: var(--purple); }
   .btn-load-more:disabled { opacity: 0.5; cursor: default; }
 
-  /* ---- Mode tabs (Search / Generate) ---- */
-  .mode-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
-  .mode-tab { padding: 10px 24px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text3); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: color 0.2s, border-color 0.2s; margin-bottom: -1px; letter-spacing: 0.02em; }
-  .mode-tab:hover { color: var(--purple2); }
-  .mode-tab.active { color: var(--purple2); border-bottom-color: var(--purple); }
-
-  /* ---- Generate Panel ---- */
-  #generatePanel { display: none; }
-  #generatePanel.visible { display: block; }
-  #searchPanel.hidden-panel { display: none; }
-
-  .gen-area { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 16px; }
-  .gen-prompt-row { display: flex; gap: 10px; align-items: stretch; }
-  .gen-prompt-wrap { flex: 1; position: relative; }
-  .gen-prompt-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
-  #genPrompt { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 11px 14px 11px 42px; outline: none; transition: border-color 0.2s; }
-  #genPrompt:focus { border-color: var(--purple3); }
-  .btn-generate { background: var(--purple3); border: 1px solid var(--purple); color: var(--accent); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 28px; border-radius: var(--radius2); cursor: pointer; transition: background 0.2s, transform 0.1s; white-space: nowrap; }
-  .btn-generate:hover { background: rgba(124,92,191,0.9); }
-  .btn-generate:active { transform: scale(0.98); }
-  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-
-  .gen-options-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
-  .gen-option-group { display: flex; flex-direction: column; gap: 6px; }
-  .gen-option-group > label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-  .gen-select { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 7px 12px; outline: none; cursor: pointer; transition: border-color 0.2s; }
-  .gen-select:focus { border-color: var(--purple3); }
-  .gen-number { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 7px 10px; outline: none; width: 80px; text-align: center; transition: border-color 0.2s; }
-  .gen-number:focus { border-color: var(--purple3); }
-
-  .hf-key-row { display: flex; gap: 10px; align-items: center; }
-  .hf-key-row input { flex: 1; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); color: var(--text2); font-family: 'DM Sans', monospace; font-size: 13px; padding: 8px 12px; outline: none; transition: border-color 0.2s; }
-  .hf-key-row input:focus { border-color: var(--purple3); }
-  .hf-key-hint { font-size: 11px; color: var(--text3); }
-  .hf-key-hint a { color: var(--purple2); text-decoration: none; }
-  .hf-key-hint a:hover { text-decoration: underline; }
-
-  .gen-progress { display: flex; flex-direction: column; align-items: center; padding: 60px 20px; gap: 16px; }
-  .gen-progress .spinner { width: 40px; height: 40px; border: 2px solid var(--border2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  .gen-progress-text { font-size: 14px; color: var(--text3); }
-  .gen-progress-sub { font-size: 12px; color: var(--muted); }
-
-  .gen-results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .gen-results-count { font-size: 13px; color: var(--text3); }
-  .gen-results-count strong { color: var(--purple2); }
-  .btn-clear-gen { background: transparent; border: 1px solid var(--border); color: var(--text3); font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 5px 12px; border-radius: var(--radius2); cursor: pointer; transition: all 0.15s; }
-  .btn-clear-gen:hover { border-color: var(--danger); color: var(--danger); }
-
-  .gen-model-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 4px; background: rgba(168,127,255,0.15); color: var(--purple2); border: 1px solid rgba(168,127,255,0.25); }
 
   @media (max-width: 640px) {
     .modal { grid-template-columns: 1fr; }
@@ -336,14 +287,7 @@
     <div class="tagline">Free-to-use images for education — no attribution required</div>
   </header>
 
-  <!-- Mode tabs -->
-  <div class="mode-tabs">
-    <button class="mode-tab active" id="tab-search" onclick="setMode('search')">🔍 Search</button>
-    <button class="mode-tab" id="tab-generate" onclick="setMode('generate')">✦ Generate</button>
-  </div>
-
   <!-- Search Panel -->
-  <div id="searchPanel">
   <!-- Search Area -->
   <div class="search-area">
     <div class="search-row">
@@ -432,85 +376,6 @@
     <p>Enter a search term and choose your sources to find free educational images.</p>
   </div>
 
-  </div><!-- /searchPanel -->
-
-  <!-- Generate Panel -->
-  <div id="generatePanel">
-    <div class="gen-area">
-      <!-- HF Key -->
-      <div class="gen-option-group">
-        <label>Hugging Face API Key <span style="color:var(--muted);font-weight:400;text-transform:none;letter-spacing:0;">(required — free account)</span></label>
-        <div class="hf-key-row">
-          <input type="password" id="hfApiKey" placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
-          <span class="hf-key-hint"><a href="https://huggingface.co/settings/tokens" target="_blank">Get a free key ↗</a></span>
-        </div>
-      </div>
-
-      <!-- Prompt -->
-      <div class="gen-prompt-row">
-        <div class="gen-prompt-wrap">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
-          </svg>
-          <input type="text" id="genPrompt" maxlength="500" placeholder='Describe what to generate… e.g. "a student reading under a warm lamp"' onkeydown="if(event.key==='Enter') doGenerate()">
-        </div>
-        <button class="btn-generate" id="genBtn" onclick="doGenerate()">Generate</button>
-      </div>
-
-      <!-- Options -->
-      <div class="gen-options-row">
-        <div class="gen-option-group">
-          <label>Aspect ratio</label>
-          <select class="gen-select" id="genAspect">
-            <option value="1024x1024">Square (1024×1024)</option>
-            <option value="1344x768">Landscape (1344×768)</option>
-            <option value="768x1344">Portrait (768×1344)</option>
-            <option value="1216x832">Wide (1216×832)</option>
-            <option value="832x1216">Tall (832×1216)</option>
-          </select>
-        </div>
-        <div class="gen-option-group">
-          <label>Steps</label>
-          <input type="number" class="gen-number" id="genSteps" value="28" min="10" max="50">
-        </div>
-        <div class="gen-option-group">
-          <label>Guidance scale</label>
-          <input type="number" class="gen-number" id="genGuidance" value="7" min="1" max="20" step="0.5">
-        </div>
-        <div class="gen-option-group" style="margin-left:auto;">
-          <label>Model</label>
-          <div style="padding:8px 0;"><span class="gen-model-badge">SD 3.5 Large</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Error (generate) -->
-    <div id="genErrorBox" class="error-msg hidden"></div>
-
-    <!-- Gen loading -->
-    <div class="gen-progress hidden" id="genProgress">
-      <div class="spinner"></div>
-      <div class="gen-progress-text" id="genProgressText">Generating your image…</div>
-      <div class="gen-progress-sub">SD 3.5 Large · This can take 20–60 seconds on Hugging Face free tier</div>
-    </div>
-
-    <!-- Gen results header -->
-    <div class="gen-results-header" id="genResultsHeader" style="display:none;">
-      <div class="gen-results-count"><strong id="genCount">0</strong> generated</div>
-      <button class="btn-clear-gen" onclick="clearGenResults()">Clear all</button>
-    </div>
-
-    <!-- Gen grid -->
-    <div id="genGrid" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;"></div>
-
-    <!-- Gen initial state -->
-    <div class="state-box" id="genStateBox">
-      <div class="big">✦</div>
-      <p>Enter a prompt above to generate images using Stable Diffusion 3.5 Large.</p>
-    </div>
-  </div><!-- /generatePanel -->
-
-</div><!-- /.app -->
 
 <!-- Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOnBg(event)">
@@ -602,19 +467,8 @@ function setViewMode(mode) {
   document.getElementById('btn-grid').classList.toggle('active', mode === 'grid');
   document.getElementById('btn-list').classList.toggle('active', mode === 'list');
   const grid = document.getElementById('resultsGrid');
-  const genGrid = document.getElementById('genGrid');
-  if (mode === 'list') {
-    grid.classList.add('list-view');
-    genGrid.classList.add('list-view');
-    genGrid.style.display = 'flex';
-    genGrid.style.flexDirection = 'column';
-    genGrid.style.gap = '10px';
-  } else {
-    grid.classList.remove('list-view');
-    genGrid.classList.remove('list-view');
-    genGrid.style.display = 'grid';
-    genGrid.style.flexDirection = '';
-  }
+  if (mode === 'list') { grid.classList.add('list-view'); }
+  else { grid.classList.remove('list-view'); }
 }
 
 // ---- Search (fresh) ----
@@ -899,141 +753,6 @@ function copyUrl() {
 function showError(msg) { const el = document.getElementById('errorBox'); el.textContent = msg; el.classList.remove('hidden'); }
 function clearError() { document.getElementById('errorBox').classList.add('hidden'); }
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-// ---- Mode switching ----
-let currentMode = 'search';
-function setMode(mode) {
-  currentMode = mode;
-  document.getElementById('tab-search').classList.toggle('active', mode === 'search');
-  document.getElementById('tab-generate').classList.toggle('active', mode === 'generate');
-  document.getElementById('searchPanel').classList.toggle('hidden-panel', mode !== 'search');
-  document.getElementById('generatePanel').classList.toggle('visible', mode === 'generate');
-}
-
-// ---- Generate with SD 3.5 Large via Hugging Face ----
-const HF_MODEL = 'stabilityai/stable-diffusion-3.5-large';
-let genImages = [];
-
-async function doGenerate() {
-  const apiKey = document.getElementById('hfApiKey').value.trim();
-  const prompt = document.getElementById('genPrompt').value.trim();
-  if (!apiKey) { showGenError('Please enter your Hugging Face API key above.'); return; }
-  if (!prompt) { showGenError('Please enter a prompt to generate an image.'); return; }
-  if (prompt.length > 500) { showGenError('Prompt must be 500 characters or fewer.'); return; }
-
-  clearGenError();
-  const [w, h] = document.getElementById('genAspect').value.split('x').map(Number);
-  // Clamp steps and guidance to valid ranges regardless of what the inputs contain
-  const steps = Math.min(50, Math.max(10, parseInt(document.getElementById('genSteps').value) || 28));
-  const guidance = Math.min(20, Math.max(1, parseFloat(document.getElementById('genGuidance').value) || 7));
-
-  const btn = document.getElementById('genBtn');
-  btn.disabled = true;
-  btn.textContent = 'Generating…';
-  document.getElementById('genProgress').classList.remove('hidden');
-  document.getElementById('genStateBox').style.display = 'none';
-
-  // Cycle progress messages
-  const msgs = ['Sending to SD 3.5 Large…', 'Running diffusion steps…', 'Rendering your image…', 'Almost there…'];
-  let msgIdx = 0;
-  const msgEl = document.getElementById('genProgressText');
-  const msgTimer = setInterval(() => { msgIdx = (msgIdx + 1) % msgs.length; msgEl.textContent = msgs[msgIdx]; }, 6000);
-
-  try {
-    const res = await fetch(`https://api-inference.huggingface.co/models/${HF_MODEL}`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        inputs: prompt,
-        parameters: { width: w, height: h, num_inference_steps: steps, guidance_scale: guidance }
-      })
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      let msg = `Hugging Face error ${res.status}`;
-      try { const j = JSON.parse(errText); msg = j.error || msg; } catch(e) {}
-      if (res.status === 503) msg = 'Model is loading on Hugging Face — please wait 20–30 seconds and try again.';
-      if (res.status === 401) msg = 'Invalid API key. Check your Hugging Face token.';
-      throw new Error(msg);
-    }
-
-    const blob = await res.blob();
-    const objUrl = URL.createObjectURL(blob);
-    // Build a safe filename from the prompt (strip non-alphanumeric, truncate)
-    const safePrompt = prompt.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'generated';
-    const filename = `sd35-${safePrompt}.png`;
-
-    const imgObj = {
-      id: 'gen_' + Date.now(),
-      source: 'SD 3.5 Large',
-      title: prompt,
-      photographer: 'AI Generated',
-      thumb: objUrl,
-      srcSet: { small: objUrl, medium: objUrl, large: objUrl, original: objUrl },
-      width: w, height: h,
-      pageUrl: `https://huggingface.co/${HF_MODEL}`,
-      license: 'AI Generated', licenseNote: 'Image generated by Stable Diffusion 3.5 Large. Check SD 3.5 license for usage terms.',
-      isCC0: false, isGenerated: true,
-      prompt: prompt,
-      filename: filename,
-    };
-    genImages.unshift(imgObj);
-    renderGenResults();
-
-  } catch(err) {
-    showGenError(err.message || String(err));
-    if (genImages.length === 0) document.getElementById('genStateBox').style.display = '';
-  } finally {
-    clearInterval(msgTimer);
-    document.getElementById('genProgress').classList.add('hidden');
-    btn.disabled = false;
-    btn.textContent = 'Generate';
-  }
-}
-
-function renderGenResults() {
-  const grid = document.getElementById('genGrid');
-  grid.innerHTML = '';
-  genImages.forEach(img => {
-    const card = document.createElement('div');
-    card.className = 'img-card';
-    card.onclick = () => openModal(img);
-    card.innerHTML =
-      `<img class="img-thumb" src="${escHtml(img.thumb)}" alt="${escHtml(img.title)}" loading="lazy">` +
-      `<div class="img-grid-footer">
-        <span class="img-source-badge" style="background:rgba(168,127,255,0.2);color:var(--purple2);">SD 3.5</span>
-        <span class="img-dims">${img.width}×${img.height}</span>
-      </div>` +
-      `<div class="img-list-detail">
-        <div class="list-top">
-          <div class="list-title">${escHtml(img.title)}</div>
-          <span class="list-source-badge">SD 3.5 Large</span>
-        </div>
-        <div class="list-attrs">
-          <div class="list-attr"><span class="list-attr-label">Prompt</span><span class="list-attr-val">${escHtml(img.prompt)}</span></div>
-          <div class="list-attr"><span class="list-attr-label">Dimensions</span><span class="list-attr-val">${img.width} × ${img.height} px</span></div>
-        </div>
-        <div class="list-bottom">
-          <a class="list-action" href="${escHtml(img.thumb)}" download="${escHtml(img.filename || 'sd35-generated.png')}" onclick="event.stopPropagation()">&#x2193; Download</a>
-        </div>
-      </div>`;
-    grid.appendChild(card);
-  });
-  const header = document.getElementById('genResultsHeader');
-  header.style.display = genImages.length > 0 ? 'flex' : 'none';
-  document.getElementById('genCount').textContent = genImages.length;
-  document.getElementById('genStateBox').style.display = genImages.length > 0 ? 'none' : '';
-}
-
-function clearGenResults() {
-  genImages.forEach(img => { if (img.thumb.startsWith('blob:')) URL.revokeObjectURL(img.thumb); });
-  genImages = [];
-  renderGenResults();
-}
-
-function showGenError(msg) { const el = document.getElementById('genErrorBox'); el.textContent = msg; el.classList.remove('hidden'); }
-function clearGenError() { document.getElementById('genErrorBox').classList.add('hidden'); }
 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 </script>
