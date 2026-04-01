@@ -269,6 +269,24 @@
   ::-webkit-scrollbar-track { background: var(--bg2); }
   ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
 
+  /* Load more button */
+  .btn-load-more {
+    display: block;
+    margin: 32px auto 0;
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--purple2);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px 40px;
+    border-radius: var(--radius2);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .btn-load-more:hover { background: var(--tag-bg); border-color: var(--purple); }
+  .btn-load-more:disabled { opacity: 0.5; cursor: default; }
+
   @media (max-width: 640px) {
     .modal { grid-template-columns: 1fr; }
     .modal-img-pane { border-radius: 16px 16px 0 0; min-height: 200px; }
@@ -450,6 +468,13 @@ let currentModal = null;
 let activeModalSize = 'medium';
 let viewMode = 'grid';
 
+// Pagination state
+let currentQuery = '';
+let pageState = {};       // per-source current page
+let exhausted = {};       // per-source: true when no more pages
+let totalLoaded = 0;
+const PER_SOURCE = 13;    // ~13 × 4 sources = ~52 per load
+
 const PRESETS = {
   small:    { label: 'Small' },
   medium:   { label: 'Medium' },
@@ -505,148 +530,149 @@ function setViewMode(mode) {
   document.getElementById('btn-grid').classList.toggle('active', mode === 'grid');
   document.getElementById('btn-list').classList.toggle('active', mode === 'list');
   const grid = document.getElementById('resultsGrid');
-  if (mode === 'list') {
-    grid.classList.add('list-view');
-  } else {
-    grid.classList.remove('list-view');
-  }
+  if (mode === 'list') { grid.classList.add('list-view'); }
+  else { grid.classList.remove('list-view'); }
 }
 
-// ---- Search ----
+// ---- Search (fresh) ----
 async function doSearch() {
   const q = document.getElementById('searchQuery').value.trim();
   if (!q) return;
   if (!Object.values(activeSources).some(v => v)) { showError('Select at least one source.'); return; }
   clearError();
+
+  // Reset pagination
+  currentQuery = q;
+  pageState = { pexels: 1, unsplash: 1, pixabay: 1, openverse: 1 };
+  exhausted = { pexels: false, unsplash: false, pixabay: false, openverse: false };
+  totalLoaded = 0;
+
   showLoading();
+  document.getElementById('resultsGrid').innerHTML = '';
+
+  const { all, errors } = await fetchPage(q);
+  renderBatch(all, true);
+  if (errors.length) showError(errors.map(e => e.message || String(e)).join(' · '));
+  updateUI(all.length, q);
+}
+
+// ---- Load more ----
+async function loadMore() {
+  const btn = document.getElementById('loadMoreBtn');
+  if (btn) { btn.textContent = 'Loading…'; btn.disabled = true; }
+  clearError();
+  const { all, errors } = await fetchPage(currentQuery);
+  renderBatch(all, false);
+  if (errors.length) showError(errors.map(e => e.message || String(e)).join(' · '));
+  updateUI(all.length, currentQuery);
+}
+
+// ---- Fetch one page across active sources ----
+async function fetchPage(q) {
   const promises = [];
-  if (activeSources.pexels)    promises.push(searchPexels(q));
-  if (activeSources.unsplash)  promises.push(searchUnsplash(q));
-  if (activeSources.pixabay)   promises.push(searchPixabay(q));
-  if (activeSources.openverse) promises.push(searchOpenverse(q));
+  if (activeSources.pexels    && !exhausted.pexels)     promises.push(fetchPexels(q,     pageState.pexels));
+  if (activeSources.unsplash  && !exhausted.unsplash)   promises.push(fetchUnsplash(q,   pageState.unsplash));
+  if (activeSources.pixabay   && !exhausted.pixabay)    promises.push(fetchPixabay(q,    pageState.pixabay));
+  if (activeSources.openverse && !exhausted.openverse)  promises.push(fetchOpenverse(q,  pageState.openverse));
+
   const results = await Promise.allSettled(promises);
   const all = [], errors = [];
-  results.forEach(r => r.status === 'fulfilled' ? all.push(...r.value) : errors.push(r.reason));
+  results.forEach(r => {
+    if (r.status === 'fulfilled') {
+      all.push(...r.value.items);
+      // Advance page, mark exhausted if fewer results than requested
+      const src = r.value.source;
+      pageState[src]++;
+      if (r.value.items.length < PER_SOURCE) exhausted[src] = true;
+    } else {
+      errors.push(r.reason);
+    }
+  });
   all.sort(() => Math.random() - 0.5);
-  renderResults(all, errors, q);
+  return { all, errors };
 }
 
-function showLoading() {
-  document.getElementById('stateBox').innerHTML = '<div class="spinner"></div><p>Searching across sources...</p>';
-  document.getElementById('stateBox').style.display = 'block';
-  document.getElementById('resultsGrid').innerHTML = '';
-  document.getElementById('resultsHeader').style.display = 'none';
-}
-
-// ---- Pexels ----
-async function searchPexels(q) {
+// ---- Per-source fetchers (return { source, items[] }) ----
+async function fetchPexels(q, page) {
   const key = localStorage.getItem('lumi_pexels') || '';
   if (!key) throw new Error('Pexels: no API key set.');
-  const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=15`, { headers: { Authorization: key } });
+  const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}`, { headers: { Authorization: key } });
   if (!res.ok) throw new Error('Pexels: ' + res.status);
   const data = await res.json();
-  return (data.photos || []).map(p => ({
+  const items = (data.photos || []).map(p => ({
     id: 'px_' + p.id, source: 'Pexels',
-    title: p.alt || 'Pexels photo',
-    photographer: p.photographer,
+    title: p.alt || 'Pexels photo', photographer: p.photographer,
     thumb: p.src.medium,
     srcSet: { small: p.src.small, medium: p.src.medium, large: p.src.large, original: p.src.original },
-    width: p.width, height: p.height,
-    pageUrl: p.url,
-    license: 'Pexels License',
-    licenseNote: 'Free to use for any purpose. No attribution required.',
-    isCC0: true,
+    width: p.width, height: p.height, pageUrl: p.url,
+    license: 'Pexels License', licenseNote: 'Free to use for any purpose. No attribution required.', isCC0: true,
   }));
+  return { source: 'pexels', items };
 }
 
-// ---- Unsplash ----
-async function searchUnsplash(q) {
+async function fetchUnsplash(q, page) {
   const key = localStorage.getItem('lumi_unsplash') || '';
   if (!key) throw new Error('Unsplash: no API key set.');
-  const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=15&client_id=${key}`);
+  const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}&client_id=${key}`);
   if (!res.ok) throw new Error('Unsplash: ' + res.status);
   const data = await res.json();
-  return (data.results || []).map(p => ({
+  const items = (data.results || []).map(p => ({
     id: 'us_' + p.id, source: 'Unsplash',
-    title: p.description || p.alt_description || 'Unsplash photo',
-    photographer: p.user?.name,
+    title: p.description || p.alt_description || 'Unsplash photo', photographer: p.user?.name,
     thumb: p.urls.small,
     srcSet: { small: p.urls.thumb, medium: p.urls.small, large: p.urls.regular, original: p.urls.full },
-    width: p.width, height: p.height,
-    pageUrl: p.links.html,
-    license: 'Unsplash License',
-    licenseNote: 'Free to use for any purpose. No attribution required (appreciated).',
-    isCC0: true,
+    width: p.width, height: p.height, pageUrl: p.links.html,
+    license: 'Unsplash License', licenseNote: 'Free to use for any purpose. No attribution required (appreciated).', isCC0: true,
   }));
+  return { source: 'unsplash', items };
 }
 
-// ---- Pixabay ----
-async function searchPixabay(q) {
+async function fetchPixabay(q, page) {
   const key = localStorage.getItem('lumi_pixabay') || '';
   if (!key) throw new Error('Pixabay: no API key set.');
-  const res = await fetch(`https://pixabay.com/api/?key=${key}&q=${encodeURIComponent(q)}&per_page=15&safesearch=true`);
+  const res = await fetch(`https://pixabay.com/api/?key=${key}&q=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}&safesearch=true`);
   if (!res.ok) throw new Error('Pixabay: ' + res.status);
   const data = await res.json();
-  return (data.hits || []).map(p => ({
+  const items = (data.hits || []).map(p => ({
     id: 'pb_' + p.id, source: 'Pixabay',
-    title: p.tags || 'Pixabay image',
-    photographer: p.user,
+    title: p.tags || 'Pixabay image', photographer: p.user,
     thumb: p.webformatURL,
     srcSet: { small: p.previewURL, medium: p.webformatURL, large: p.largeImageURL, original: p.fullHDURL || p.largeImageURL },
-    width: p.imageWidth, height: p.imageHeight,
-    pageUrl: p.pageURL,
-    license: 'Pixabay License',
-    licenseNote: 'Free for commercial and educational use. No attribution required.',
-    isCC0: true,
+    width: p.imageWidth, height: p.imageHeight, pageUrl: p.pageURL,
+    license: 'Pixabay License', licenseNote: 'Free for commercial and educational use. No attribution required.', isCC0: true,
   }));
+  return { source: 'pixabay', items };
 }
 
-// ---- Openverse ----
-async function searchOpenverse(q) {
-  const res = await fetch(`https://api.openverse.org/v1/images/?q=${encodeURIComponent(q)}&page_size=12&license_type=commercial`);
+async function fetchOpenverse(q, page) {
+  const res = await fetch(`https://api.openverse.org/v1/images/?q=${encodeURIComponent(q)}&page_size=${PER_SOURCE}&page=${page}&license_type=commercial`);
   if (!res.ok) throw new Error('Openverse: ' + res.status);
   const data = await res.json();
-  return (data.results || []).map(p => {
+  const items = (data.results || []).map(p => {
     const licStr = (p.license || '').toLowerCase();
     const isCC0 = licStr.includes('cc0') || licStr === 'pdm';
     const licLabel = p.license_version ? (p.license || '').toUpperCase() + ' ' + p.license_version : (p.license || '').toUpperCase();
     return {
       id: 'ov_' + p.id, source: 'Openverse',
-      title: p.title || 'Openverse image',
-      photographer: p.creator || 'Unknown',
+      title: p.title || 'Openverse image', photographer: p.creator || 'Unknown',
       thumb: p.thumbnail || p.url,
       srcSet: { small: p.thumbnail || p.url, medium: p.url, large: p.url, original: p.url },
       width: p.width || null, height: p.height || null,
       pageUrl: p.foreign_landing_url || p.url,
-      license: licLabel,
-      licenseNote: isCC0 ? 'CC0 — No rights reserved. Free to use without any attribution.' : 'CC BY — Free to use with attribution to the creator.',
-      isCC0,
-      ovLicLabel: isCC0 ? 'CC0' : 'CC BY',
+      license: licLabel, licenseNote: isCC0 ? 'CC0 — No rights reserved. Free to use without any attribution.' : 'CC BY — Free to use with attribution to the creator.',
+      isCC0, ovLicLabel: isCC0 ? 'CC0' : 'CC BY',
     };
   });
+  return { source: 'openverse', items };
 }
 
-// ---- Render ----
-function renderResults(all, errors, q) {
-  document.getElementById('stateBox').style.display = all.length ? 'none' : 'block';
-  if (!all.length) {
-    document.getElementById('stateBox').innerHTML = '<div class="big">&#x1F50D;</div><p>No results found for "' + q + '". Try different keywords or enable more sources.</p>';
-  }
-  if (errors.length) showError(errors.map(e => e.message || String(e)).join(' · '));
-
-  document.getElementById('resultsHeader').style.display = all.length ? 'flex' : 'none';
-  document.getElementById('resultsCount').innerHTML = '<strong>' + all.length + '</strong> images found';
-
+// ---- Render a batch of cards (append mode) ----
+function renderBatch(items, fresh) {
   const grid = document.getElementById('resultsGrid');
-  grid.innerHTML = '';
-  // Reapply current view mode class
-  if (viewMode === 'list') {
-    grid.classList.add('list-view');
-  } else {
-    grid.classList.remove('list-view');
-  }
+  if (fresh) grid.innerHTML = '';
+  if (viewMode === 'list') { grid.classList.add('list-view'); } else { grid.classList.remove('list-view'); }
 
-  all.forEach(img => {
+  items.forEach(img => {
     const card = document.createElement('div');
     card.className = 'img-card';
     card.onclick = () => openModal(img);
@@ -654,26 +680,18 @@ function renderResults(all, errors, q) {
     const dims = (img.width && img.height) ? img.width + ' × ' + img.height + ' px' : 'Unknown';
     const photographer = img.photographer ? escHtml(img.photographer) : 'Unknown';
     const dlUrl = img.srcSet[activePreset] || img.srcSet.original || '';
-
-    // Openverse CC badge (for grid overlay and list)
     const ovBadgeClass = img.source === 'Openverse' ? (img.isCC0 ? 'license-cc0' : 'license-ccby') : '';
     const ovBadgeLabel = img.source === 'Openverse' ? img.ovLicLabel : '';
-    const gridBadge = img.source === 'Openverse'
-      ? `<div class="license-badge ${ovBadgeClass}">${ovBadgeLabel}</div>` : '';
-    const listBadge = img.source === 'Openverse'
-      ? `<span class="list-cc-badge ${ovBadgeClass}">${ovBadgeLabel}</span>` : '';
+    const gridBadge = img.source === 'Openverse' ? `<div class="license-badge ${ovBadgeClass}">${ovBadgeLabel}</div>` : '';
+    const listBadge = img.source === 'Openverse' ? `<span class="list-cc-badge ${ovBadgeClass}">${ovBadgeLabel}</span>` : '';
 
     card.innerHTML =
-      // --- Thumbnail (shown in both modes) ---
       `<img class="img-thumb" src="${escHtml(img.thumb)}" alt="${escHtml(img.title)}" loading="lazy">` +
-      // --- Grid overlay badge ---
       gridBadge +
-      // --- Grid footer (hidden in list mode) ---
       `<div class="img-grid-footer">
         <span class="img-source-badge">${img.source}</span>
         <span class="img-dims">${img.width && img.height ? img.width + '×' + img.height : ''}</span>
       </div>` +
-      // --- List detail panel (hidden in grid mode) ---
       `<div class="img-list-detail">
         <div class="list-top">
           <div class="list-title">${escHtml(img.title)}</div>
@@ -691,10 +709,108 @@ function renderResults(all, errors, q) {
           <a class="list-action" href="${escHtml(img.pageUrl)}" target="_blank" onclick="event.stopPropagation()">Source &#x2197;</a>
         </div>
       </div>`;
-
     grid.appendChild(card);
   });
+
+  totalLoaded += items.length;
 }
+
+// ---- Update header count + load-more button ----
+function updateUI(batchSize, q) {
+  const header = document.getElementById('resultsHeader');
+  const stateBox = document.getElementById('stateBox');
+
+  if (totalLoaded === 0) {
+    stateBox.innerHTML = '<div class="big">&#x1F50D;</div><p>No results found for "' + escHtml(q) + '". Try different keywords or enable more sources.</p>';
+    stateBox.style.display = 'block';
+    header.style.display = 'none';
+  } else {
+    stateBox.style.display = 'none';
+    header.style.display = 'flex';
+  }
+
+  document.getElementById('resultsCount').innerHTML = '<strong>' + totalLoaded + '</strong> images loaded';
+
+  // Remove existing load-more button
+  const existing = document.getElementById('loadMoreBtn');
+  if (existing) existing.remove();
+
+  // Check if any source still has more pages
+  const anyMore = Object.keys(activeSources).some(src => activeSources[src] && !exhausted[src]);
+  if (anyMore && totalLoaded > 0) {
+    const btn = document.createElement('button');
+    btn.id = 'loadMoreBtn';
+    btn.className = 'btn-load-more';
+    btn.textContent = 'Load more images';
+    btn.onclick = loadMore;
+    document.querySelector('.app').appendChild(btn);
+  }
+}
+
+function showLoading() {
+  document.getElementById('stateBox').innerHTML = '<div class="spinner"></div><p>Searching across sources…</p>';
+  document.getElementById('stateBox').style.display = 'block';
+  document.getElementById('resultsHeader').style.display = 'none';
+  const existing = document.getElementById('loadMoreBtn');
+  if (existing) existing.remove();
+}
+
+// ---- Modal ----
+function openModal(img) {
+  currentModal = img;
+  activeModalSize = sizeMode === 'preset' ? activePreset : 'original';
+  document.getElementById('modalSource').textContent = img.source;
+  document.getElementById('modalTitle').textContent = img.title;
+  document.getElementById('modalImg').src = img.thumb;
+  document.getElementById('modalLicense').innerHTML = '<strong>' + escHtml(img.license) + '</strong> — ' + escHtml(img.licenseNote);
+  document.getElementById('modalOpen').href = img.pageUrl;
+  let attrHtml = '';
+  if (img.photographer) attrHtml += `<div class="attr-row"><span class="attr-label">By</span><span class="attr-val">${escHtml(img.photographer)}</span></div>`;
+  if (img.width && img.height) attrHtml += `<div class="attr-row"><span class="attr-label">Original</span><span class="attr-val">${img.width} × ${img.height} px</span></div>`;
+  document.getElementById('modalAttrs').innerHTML = attrHtml;
+  const sizeOpts = document.getElementById('modalSizeOptions');
+  sizeOpts.innerHTML = '';
+  ['small','medium','large','original'].forEach(sz => {
+    const btn = document.createElement('button');
+    btn.className = 'sz-btn' + (sz === activeModalSize ? ' active' : '');
+    btn.textContent = PRESETS[sz].label;
+    btn.onclick = (e) => { activeModalSize = sz; document.querySelectorAll('.sz-btn').forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); updateModalUrl(); };
+    sizeOpts.appendChild(btn);
+  });
+  updateModalUrl();
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function updateModalUrl() {
+  if (!currentModal) return;
+  const url = currentModal.srcSet[activeModalSize] || currentModal.srcSet.original;
+  document.getElementById('modalUrl').value = url;
+  document.getElementById('modalImg').src = url || currentModal.thumb;
+  document.getElementById('modalDownload').href = url;
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  currentModal = null;
+}
+function closeModalOnBg(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+function copyUrl() {
+  navigator.clipboard.writeText(document.getElementById('modalUrl').value).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+// ---- Errors ----
+function showError(msg) { const el = document.getElementById('errorBox'); el.textContent = msg; el.classList.remove('hidden'); }
+function clearError() { document.getElementById('errorBox').classList.add('hidden'); }
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 // ---- Modal ----
 function openModal(img) {
