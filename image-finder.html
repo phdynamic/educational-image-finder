@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luminary — Free Image Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0b14;
+    --bg2: #13101f;
+    --bg3: #1a1628;
+    --surface: #1f1a30;
+    --surface2: #2a2340;
+    --border: rgba(160,130,255,0.12);
+    --border2: rgba(160,130,255,0.25);
+    --purple: #a87fff;
+    --purple2: #c9a8ff;
+    --purple3: #7c5cbf;
+    --accent: #e0c8ff;
+    --muted: #7a6e99;
+    --text: #ede8ff;
+    --text2: #b8aed4;
+    --text3: #7a6e99;
+    --danger: #ff6b8a;
+    --success: #7affb8;
+    --tag-bg: rgba(168,127,255,0.12);
+    --radius: 12px;
+    --radius2: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(140,90,255,0.07) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 50% at 80% 80%, rgba(100,60,200,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 1300px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---- Header ---- */
+  header { padding: 40px 0 36px; display: flex; flex-direction: column; gap: 4px; }
+  .logo { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; color: var(--accent); }
+  .logo span { color: var(--purple); }
+  .tagline { font-size: 13px; color: var(--muted); font-weight: 300; letter-spacing: 0.02em; }
+
+  /* ---- Keys Panel ---- */
+  .keys-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; }
+  .keys-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+  .keys-header h3 { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; color: var(--purple2); }
+  .keys-toggle { font-size: 12px; color: var(--muted); }
+  .keys-body { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .keys-body.hidden { display: none; }
+  .key-field label { display: block; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
+  .key-field input { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 9px 12px; outline: none; transition: border-color 0.2s; }
+  .key-field input:focus { border-color: var(--purple3); }
+  .key-note { margin-top: 12px; font-size: 12px; color: var(--text3); line-height: 1.5; }
+  .key-note a { color: var(--purple); text-decoration: none; }
+  .key-note a:hover { text-decoration: underline; }
+  .key-saved { display: inline-block; font-size: 11px; color: var(--success); margin-left: 8px; opacity: 0; transition: opacity 0.3s; }
+  .key-saved.show { opacity: 1; }
+
+  /* ---- Search Area ---- */
+  .search-area { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 16px; }
+  .search-row { display: flex; gap: 10px; align-items: stretch; }
+  .search-input-wrap { flex: 1; position: relative; }
+  .search-input-wrap svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+  #searchQuery { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; padding: 11px 14px 11px 42px; outline: none; transition: border-color 0.2s; }
+  #searchQuery:focus { border-color: var(--purple3); }
+  .btn-search { background: var(--purple3); border: 1px solid var(--purple); color: var(--accent); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; padding: 11px 28px; border-radius: var(--radius2); cursor: pointer; transition: background 0.2s, transform 0.1s; white-space: nowrap; }
+  .btn-search:hover { background: rgba(124,92,191,0.9); }
+  .btn-search:active { transform: scale(0.98); }
+
+  .controls-row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .control-group { display: flex; flex-direction: column; gap: 6px; }
+  .control-group > label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+
+  /* Source chips */
+  .source-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border2); background: transparent; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; user-select: none; }
+  .chip:hover { border-color: var(--purple); color: var(--purple2); }
+  .chip.active { background: var(--tag-bg); border-color: var(--purple); color: var(--purple2); }
+  .chip .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+  .dot-pexels { background: #05a081; }
+  .dot-unsplash { background: #888; }
+  .dot-pixabay { background: #2ec66d; }
+  .dot-openverse { background: #e5a423; }
+
+  /* Size controls */
+  .size-tabs { display: flex; border: 1px solid var(--border); border-radius: var(--radius2); overflow: hidden; }
+  .size-tab { padding: 7px 16px; background: transparent; border: none; border-right: 1px solid var(--border); color: var(--text3); font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .size-tab:last-child { border-right: none; }
+  .size-tab.active { background: var(--tag-bg); color: var(--purple2); }
+  .size-preset-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .preset-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text3); font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .preset-btn.active, .preset-btn:hover { border-color: var(--purple3); color: var(--purple2); background: var(--tag-bg); }
+  .custom-dims { display: flex; gap: 8px; align-items: center; }
+  .custom-dims input { width: 80px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 7px 10px; outline: none; text-align: center; transition: border-color 0.2s; }
+  .custom-dims input:focus { border-color: var(--purple3); }
+  .custom-dims span { color: var(--muted); font-size: 13px; }
+
+  .hidden { display: none !important; }
+
+  /* View toggle */
+  .view-toggle { display: flex; border: 1px solid var(--border); border-radius: var(--radius2); overflow: hidden; }
+  .view-btn { padding: 6px 11px; background: transparent; border: none; border-right: 1px solid var(--border); color: var(--text3); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .view-btn:last-child { border-right: none; }
+  .view-btn.active { background: var(--tag-bg); color: var(--purple2); }
+
+  /* ---- Results header ---- */
+  .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .results-count { font-size: 13px; color: var(--text3); }
+  .results-count strong { color: var(--purple2); }
+
+  /* ---- GRID VIEW ---- */
+  #resultsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .img-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative;
+    display: block; /* grid default */
+  }
+  .img-card:hover { border-color: var(--purple3); transform: translateY(-2px); }
+
+  /* Grid thumbnail */
+  .img-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: var(--bg3); }
+
+  /* Grid footer bar */
+  .img-grid-footer { padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; }
+  .img-source-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 4px; background: var(--tag-bg); color: var(--purple2); }
+  .img-dims { font-size: 11px; color: var(--text3); }
+
+  /* License badge — grid (absolute over image) */
+  .license-badge { position: absolute; top: 8px; right: 8px; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; letter-spacing: 0.05em; }
+  .license-cc0 { background: rgba(127,255,184,0.15); color: #7affb8; }
+  .license-ccby { background: rgba(229,164,35,0.15); color: #e5a423; }
+
+  /* List detail — hidden in grid mode */
+  .img-list-detail { display: none; }
+
+  /* ---- LIST VIEW ---- */
+  #resultsGrid.list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #resultsGrid.list-view .img-card {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    grid-template-rows: 1fr;
+    border-radius: var(--radius2);
+    overflow: hidden;
+    transform: none !important;
+    min-height: 150px;
+  }
+
+  #resultsGrid.list-view .img-card:hover { transform: none !important; }
+
+  #resultsGrid.list-view .img-thumb {
+    width: 220px;
+    height: 150px;
+    aspect-ratio: unset;
+    object-fit: cover;
+    display: block;
+    border-radius: 0;
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  /* Hide grid-only elements in list view */
+  #resultsGrid.list-view .img-grid-footer { display: none; }
+  #resultsGrid.list-view .license-badge { display: none; }
+
+  /* Show list detail in list view */
+  #resultsGrid.list-view .img-list-detail {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 14px 18px;
+    gap: 8px;
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  /* List detail inner elements */
+  .list-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .list-title { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 600; color: var(--accent); line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; flex: 1; }
+  .list-source-badge { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 4px; background: var(--tag-bg); color: var(--purple2); flex-shrink: 0; white-space: nowrap; }
+  .list-attrs { display: flex; flex-direction: column; gap: 3px; }
+  .list-attr { font-size: 12px; display: flex; gap: 6px; }
+  .list-attr-label { color: var(--muted); min-width: 70px; flex-shrink: 0; }
+  .list-attr-val { color: var(--text2); }
+  .list-license-pill { font-size: 11px; color: var(--text3); background: var(--tag-bg); border: 1px solid var(--border); border-radius: 5px; padding: 3px 9px; display: inline-block; }
+  .list-cc-badge { font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 4px; letter-spacing: 0.05em; }
+  .list-bottom { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .list-action { font-size: 11px; font-weight: 500; color: var(--purple2); background: transparent; border: 1px solid var(--border2); border-radius: 5px; padding: 5px 11px; cursor: pointer; white-space: nowrap; text-decoration: none; transition: background 0.15s; display: inline-block; }
+  .list-action:hover { background: var(--tag-bg); }
+
+  /* ---- States ---- */
+  .state-box { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .state-box .big { font-size: 40px; margin-bottom: 12px; }
+  .state-box p { font-size: 14px; }
+  .spinner { width: 36px; height: 36px; border: 2px solid var(--border2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg { background: rgba(255,107,138,0.08); border: 1px solid rgba(255,107,138,0.2); border-radius: var(--radius2); color: var(--danger); padding: 12px 16px; font-size: 13px; margin-bottom: 16px; }
+
+  /* ---- Modal ---- */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(8,6,16,0.85); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; max-width: 860px; width: 100%; max-height: 90vh; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; transform: scale(0.96); transition: transform 0.2s; }
+  .modal-overlay.open .modal { transform: scale(1); }
+  .modal-img-pane { background: var(--bg3); border-radius: 16px 0 0 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 320px; }
+  .modal-img-pane img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .modal-info-pane { padding: 28px 28px 24px; display: flex; flex-direction: column; gap: 20px; }
+  .modal-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .modal-source-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--purple2); background: var(--tag-bg); padding: 4px 10px; border-radius: 6px; }
+  .btn-close { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: color 0.15s, border-color 0.15s; flex-shrink: 0; }
+  .btn-close:hover { color: var(--text); border-color: var(--border2); }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1.3; }
+  .modal-attrs { display: flex; flex-direction: column; gap: 8px; }
+  .attr-row { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+  .attr-label { width: 80px; flex-shrink: 0; color: var(--text3); font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 1px; }
+  .attr-val { color: var(--text2); flex: 1; word-break: break-all; }
+  .license-info { background: var(--tag-bg); border: 1px solid var(--border); border-radius: var(--radius2); padding: 10px 14px; font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .license-info strong { color: var(--purple2); }
+  .url-copy-row { display: flex; gap: 8px; }
+  .url-copy-row input { flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius2); color: var(--text3); font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 8px 10px; outline: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btn-copy { background: var(--surface2); border: 1px solid var(--border2); color: var(--purple2); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; padding: 8px 14px; border-radius: var(--radius2); cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+  .btn-copy:hover { background: var(--tag-bg); }
+  .btn-copy.copied { color: var(--success); }
+  .modal-size-section { display: flex; flex-direction: column; gap: 8px; }
+  .modal-size-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .modal-size-options { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sz-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text3); font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+  .sz-btn.active, .sz-btn:hover { border-color: var(--purple3); color: var(--purple2); background: var(--tag-bg); }
+  .btn-download { width: 100%; background: var(--purple3); border: 1px solid var(--purple); color: var(--accent); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; padding: 13px; border-radius: var(--radius2); cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+  .btn-download:hover { background: rgba(124,92,191,0.85); }
+  .btn-open { width: 100%; background: transparent; border: 1px solid var(--border2); color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 10px; border-radius: var(--radius2); cursor: pointer; transition: border-color 0.15s, color 0.15s; text-align: center; text-decoration: none; display: block; }
+  .btn-open:hover { border-color: var(--purple3); color: var(--purple2); }
+  .btn-row { display: flex; flex-direction: column; gap: 8px; }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+  @media (max-width: 640px) {
+    .modal { grid-template-columns: 1fr; }
+    .modal-img-pane { border-radius: 16px 16px 0 0; min-height: 200px; }
+    .keys-body { grid-template-columns: 1fr; }
+    #resultsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">Lumi<span>nary</span></div>
+    <div class="tagline">Free-to-use images for education — no attribution required</div>
+  </header>
+
+  <!-- API Keys Panel -->
+  <div class="keys-panel">
+    <div class="keys-header" onclick="toggleKeys()">
+      <h3>&#x1F511; API Keys <span class="key-saved" id="keySaved">Saved</span></h3>
+      <span class="keys-toggle" id="keysToggleLabel">Show</span>
+    </div>
+    <div class="keys-body hidden" id="keysBody">
+      <div class="key-field">
+        <label>Pexels API Key</label>
+        <input type="password" id="keyPexels" placeholder="Paste your Pexels key..." oninput="saveKeys()">
+      </div>
+      <div class="key-field">
+        <label>Unsplash Access Key</label>
+        <input type="password" id="keyUnsplash" placeholder="Paste your Unsplash key..." oninput="saveKeys()">
+      </div>
+      <div class="key-field">
+        <label>Pixabay API Key</label>
+        <input type="password" id="keyPixabay" placeholder="Paste your Pixabay key..." oninput="saveKeys()">
+      </div>
+      <div class="key-field">
+        <label>Openverse — No key needed</label>
+        <input type="text" value="Public API (no key required)" disabled style="opacity:0.5;cursor:default;">
+      </div>
+      <div class="key-note" style="grid-column:span 2;">
+        Get free API keys:
+        <a href="https://www.pexels.com/api/" target="_blank">Pexels</a> &nbsp;·&nbsp;
+        <a href="https://unsplash.com/developers" target="_blank">Unsplash</a> &nbsp;·&nbsp;
+        <a href="https://pixabay.com/api/docs/" target="_blank">Pixabay</a> &nbsp;·&nbsp;
+        All three are free for educational use. Keys are stored in your browser only.
+      </div>
+    </div>
+  </div>
+
+  <!-- Search Area -->
+  <div class="search-area">
+    <div class="search-row">
+      <div class="search-input-wrap">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" id="searchQuery" placeholder='Search for images... e.g. "student studying"' onkeydown="if(event.key==='Enter') doSearch()">
+      </div>
+      <button class="btn-search" onclick="doSearch()">Search</button>
+    </div>
+
+    <div class="controls-row">
+      <!-- Sources -->
+      <div class="control-group">
+        <label>Sources</label>
+        <div class="source-chips">
+          <div class="chip active" id="chip-pexels" onclick="toggleChip('pexels')"><span class="dot dot-pexels"></span>Pexels</div>
+          <div class="chip active" id="chip-unsplash" onclick="toggleChip('unsplash')"><span class="dot dot-unsplash"></span>Unsplash</div>
+          <div class="chip active" id="chip-pixabay" onclick="toggleChip('pixabay')"><span class="dot dot-pixabay"></span>Pixabay</div>
+          <div class="chip active" id="chip-openverse" onclick="toggleChip('openverse')"><span class="dot dot-openverse"></span>Openverse</div>
+        </div>
+      </div>
+
+      <!-- Size -->
+      <div class="control-group">
+        <label>Size</label>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="size-tabs">
+            <button class="size-tab active" id="tab-preset" onclick="setSizeMode('preset')">Preset</button>
+            <button class="size-tab" id="tab-custom" onclick="setSizeMode('custom')">Custom px</button>
+          </div>
+          <div id="preset-sizes" class="size-preset-row">
+            <button class="preset-btn" id="psz-small" onclick="setPreset('small')">Small</button>
+            <button class="preset-btn active" id="psz-medium" onclick="setPreset('medium')">Medium</button>
+            <button class="preset-btn" id="psz-large" onclick="setPreset('large')">Large</button>
+            <button class="preset-btn" id="psz-original" onclick="setPreset('original')">Original</button>
+          </div>
+          <div id="custom-sizes" class="custom-dims hidden">
+            <input type="number" id="customW" placeholder="Width" min="50" max="8000">
+            <span>×</span>
+            <input type="number" id="customH" placeholder="Height" min="50" max="8000">
+            <span style="color:var(--muted);font-size:12px;">px</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- View -->
+      <div class="control-group" style="margin-left:auto;">
+        <label>View</label>
+        <div class="view-toggle">
+          <button class="view-btn active" id="btn-grid" onclick="setViewMode('grid')" title="Grid view">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <rect x="1" y="1" width="6" height="6" rx="1"/>
+              <rect x="9" y="1" width="6" height="6" rx="1"/>
+              <rect x="1" y="9" width="6" height="6" rx="1"/>
+              <rect x="9" y="9" width="6" height="6" rx="1"/>
+            </svg>
+          </button>
+          <button class="view-btn" id="btn-list" onclick="setViewMode('list')" title="List view">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <rect x="1" y="2" width="14" height="2.5" rx="1"/>
+              <rect x="1" y="6.75" width="14" height="2.5" rx="1"/>
+              <rect x="1" y="11.5" width="14" height="2.5" rx="1"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div id="errorBox" class="error-msg hidden"></div>
+
+  <!-- Results header -->
+  <div class="results-header" id="resultsHeader" style="display:none;">
+    <div class="results-count" id="resultsCount"></div>
+  </div>
+
+  <!-- Results -->
+  <div id="resultsGrid"></div>
+
+  <!-- Initial state -->
+  <div class="state-box" id="stateBox">
+    <div class="big">&#x2728;</div>
+    <p>Enter a search term and choose your sources to find free educational images.</p>
+  </div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOnBg(event)">
+  <div class="modal" id="modal">
+    <div class="modal-img-pane">
+      <img id="modalImg" src="" alt="">
+    </div>
+    <div class="modal-info-pane">
+      <div class="modal-top">
+        <span class="modal-source-tag" id="modalSource"></span>
+        <button class="btn-close" onclick="closeModal()">&#x2715;</button>
+      </div>
+      <div class="modal-title" id="modalTitle"></div>
+      <div class="modal-attrs" id="modalAttrs"></div>
+      <div class="license-info" id="modalLicense"></div>
+      <div class="modal-size-section">
+        <div class="modal-size-label">Download size</div>
+        <div class="modal-size-options" id="modalSizeOptions"></div>
+      </div>
+      <div>
+        <div class="modal-size-label" style="margin-bottom:6px;">Image URL</div>
+        <div class="url-copy-row">
+          <input type="text" id="modalUrl" readonly>
+          <button class="btn-copy" id="copyBtn" onclick="copyUrl()">Copy</button>
+        </div>
+      </div>
+      <div class="btn-row">
+        <a class="btn-download" id="modalDownload" href="#" target="_blank" download>&#x2193; Download Image</a>
+        <a class="btn-open" id="modalOpen" href="#" target="_blank">Open source page</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- State ----
+let activeSources = { pexels: true, unsplash: true, pixabay: true, openverse: true };
+let sizeMode = 'preset';
+let activePreset = 'medium';
+let currentModal = null;
+let activeModalSize = 'medium';
+let viewMode = 'grid';
+
+const PRESETS = {
+  small:    { label: 'Small' },
+  medium:   { label: 'Medium' },
+  large:    { label: 'Large' },
+  original: { label: 'Original' },
+};
+
+// ---- Keys ----
+function saveKeys() {
+  localStorage.setItem('lumi_pexels',   document.getElementById('keyPexels').value);
+  localStorage.setItem('lumi_unsplash', document.getElementById('keyUnsplash').value);
+  localStorage.setItem('lumi_pixabay',  document.getElementById('keyPixabay').value);
+  const s = document.getElementById('keySaved');
+  s.classList.add('show');
+  setTimeout(() => s.classList.remove('show'), 1500);
+}
+function loadKeys() {
+  document.getElementById('keyPexels').value   = localStorage.getItem('lumi_pexels') || '';
+  document.getElementById('keyUnsplash').value = localStorage.getItem('lumi_unsplash') || '';
+  document.getElementById('keyPixabay').value  = localStorage.getItem('lumi_pixabay') || '';
+}
+function toggleKeys() {
+  const body = document.getElementById('keysBody');
+  const lbl  = document.getElementById('keysToggleLabel');
+  body.classList.toggle('hidden');
+  lbl.textContent = body.classList.contains('hidden') ? 'Show' : 'Hide';
+}
+loadKeys();
+
+// ---- Source toggles ----
+function toggleChip(src) {
+  activeSources[src] = !activeSources[src];
+  document.getElementById('chip-' + src).classList.toggle('active', activeSources[src]);
+}
+
+// ---- Size mode ----
+function setSizeMode(mode) {
+  sizeMode = mode;
+  document.getElementById('tab-preset').classList.toggle('active', mode === 'preset');
+  document.getElementById('tab-custom').classList.toggle('active', mode === 'custom');
+  document.getElementById('preset-sizes').classList.toggle('hidden', mode !== 'preset');
+  document.getElementById('custom-sizes').classList.toggle('hidden', mode !== 'custom');
+}
+function setPreset(p) {
+  activePreset = p;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('psz-' + p).classList.add('active');
+}
+
+// ---- View mode ----
+function setViewMode(mode) {
+  viewMode = mode;
+  document.getElementById('btn-grid').classList.toggle('active', mode === 'grid');
+  document.getElementById('btn-list').classList.toggle('active', mode === 'list');
+  const grid = document.getElementById('resultsGrid');
+  if (mode === 'list') {
+    grid.classList.add('list-view');
+  } else {
+    grid.classList.remove('list-view');
+  }
+}
+
+// ---- Search ----
+async function doSearch() {
+  const q = document.getElementById('searchQuery').value.trim();
+  if (!q) return;
+  if (!Object.values(activeSources).some(v => v)) { showError('Select at least one source.'); return; }
+  clearError();
+  showLoading();
+  const promises = [];
+  if (activeSources.pexels)    promises.push(searchPexels(q));
+  if (activeSources.unsplash)  promises.push(searchUnsplash(q));
+  if (activeSources.pixabay)   promises.push(searchPixabay(q));
+  if (activeSources.openverse) promises.push(searchOpenverse(q));
+  const results = await Promise.allSettled(promises);
+  const all = [], errors = [];
+  results.forEach(r => r.status === 'fulfilled' ? all.push(...r.value) : errors.push(r.reason));
+  all.sort(() => Math.random() - 0.5);
+  renderResults(all, errors, q);
+}
+
+function showLoading() {
+  document.getElementById('stateBox').innerHTML = '<div class="spinner"></div><p>Searching across sources...</p>';
+  document.getElementById('stateBox').style.display = 'block';
+  document.getElementById('resultsGrid').innerHTML = '';
+  document.getElementById('resultsHeader').style.display = 'none';
+}
+
+// ---- Pexels ----
+async function searchPexels(q) {
+  const key = localStorage.getItem('lumi_pexels') || '';
+  if (!key) throw new Error('Pexels: no API key set.');
+  const res = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=15`, { headers: { Authorization: key } });
+  if (!res.ok) throw new Error('Pexels: ' + res.status);
+  const data = await res.json();
+  return (data.photos || []).map(p => ({
+    id: 'px_' + p.id, source: 'Pexels',
+    title: p.alt || 'Pexels photo',
+    photographer: p.photographer,
+    thumb: p.src.medium,
+    srcSet: { small: p.src.small, medium: p.src.medium, large: p.src.large, original: p.src.original },
+    width: p.width, height: p.height,
+    pageUrl: p.url,
+    license: 'Pexels License',
+    licenseNote: 'Free to use for any purpose. No attribution required.',
+    isCC0: true,
+  }));
+}
+
+// ---- Unsplash ----
+async function searchUnsplash(q) {
+  const key = localStorage.getItem('lumi_unsplash') || '';
+  if (!key) throw new Error('Unsplash: no API key set.');
+  const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=15&client_id=${key}`);
+  if (!res.ok) throw new Error('Unsplash: ' + res.status);
+  const data = await res.json();
+  return (data.results || []).map(p => ({
+    id: 'us_' + p.id, source: 'Unsplash',
+    title: p.description || p.alt_description || 'Unsplash photo',
+    photographer: p.user?.name,
+    thumb: p.urls.small,
+    srcSet: { small: p.urls.thumb, medium: p.urls.small, large: p.urls.regular, original: p.urls.full },
+    width: p.width, height: p.height,
+    pageUrl: p.links.html,
+    license: 'Unsplash License',
+    licenseNote: 'Free to use for any purpose. No attribution required (appreciated).',
+    isCC0: true,
+  }));
+}
+
+// ---- Pixabay ----
+async function searchPixabay(q) {
+  const key = localStorage.getItem('lumi_pixabay') || '';
+  if (!key) throw new Error('Pixabay: no API key set.');
+  const res = await fetch(`https://pixabay.com/api/?key=${key}&q=${encodeURIComponent(q)}&per_page=15&safesearch=true`);
+  if (!res.ok) throw new Error('Pixabay: ' + res.status);
+  const data = await res.json();
+  return (data.hits || []).map(p => ({
+    id: 'pb_' + p.id, source: 'Pixabay',
+    title: p.tags || 'Pixabay image',
+    photographer: p.user,
+    thumb: p.webformatURL,
+    srcSet: { small: p.previewURL, medium: p.webformatURL, large: p.largeImageURL, original: p.fullHDURL || p.largeImageURL },
+    width: p.imageWidth, height: p.imageHeight,
+    pageUrl: p.pageURL,
+    license: 'Pixabay License',
+    licenseNote: 'Free for commercial and educational use. No attribution required.',
+    isCC0: true,
+  }));
+}
+
+// ---- Openverse ----
+async function searchOpenverse(q) {
+  const res = await fetch(`https://api.openverse.org/v1/images/?q=${encodeURIComponent(q)}&page_size=12&license_type=commercial`);
+  if (!res.ok) throw new Error('Openverse: ' + res.status);
+  const data = await res.json();
+  return (data.results || []).map(p => {
+    const licStr = (p.license || '').toLowerCase();
+    const isCC0 = licStr.includes('cc0') || licStr === 'pdm';
+    const licLabel = p.license_version ? (p.license || '').toUpperCase() + ' ' + p.license_version : (p.license || '').toUpperCase();
+    return {
+      id: 'ov_' + p.id, source: 'Openverse',
+      title: p.title || 'Openverse image',
+      photographer: p.creator || 'Unknown',
+      thumb: p.thumbnail || p.url,
+      srcSet: { small: p.thumbnail || p.url, medium: p.url, large: p.url, original: p.url },
+      width: p.width || null, height: p.height || null,
+      pageUrl: p.foreign_landing_url || p.url,
+      license: licLabel,
+      licenseNote: isCC0 ? 'CC0 — No rights reserved. Free to use without any attribution.' : 'CC BY — Free to use with attribution to the creator.',
+      isCC0,
+      ovLicLabel: isCC0 ? 'CC0' : 'CC BY',
+    };
+  });
+}
+
+// ---- Render ----
+function renderResults(all, errors, q) {
+  document.getElementById('stateBox').style.display = all.length ? 'none' : 'block';
+  if (!all.length) {
+    document.getElementById('stateBox').innerHTML = '<div class="big">&#x1F50D;</div><p>No results found for "' + q + '". Try different keywords or enable more sources.</p>';
+  }
+  if (errors.length) showError(errors.map(e => e.message || String(e)).join(' · '));
+
+  document.getElementById('resultsHeader').style.display = all.length ? 'flex' : 'none';
+  document.getElementById('resultsCount').innerHTML = '<strong>' + all.length + '</strong> images found';
+
+  const grid = document.getElementById('resultsGrid');
+  grid.innerHTML = '';
+  // Reapply current view mode class
+  if (viewMode === 'list') {
+    grid.classList.add('list-view');
+  } else {
+    grid.classList.remove('list-view');
+  }
+
+  all.forEach(img => {
+    const card = document.createElement('div');
+    card.className = 'img-card';
+    card.onclick = () => openModal(img);
+
+    const dims = (img.width && img.height) ? img.width + ' × ' + img.height + ' px' : 'Unknown';
+    const photographer = img.photographer ? escHtml(img.photographer) : 'Unknown';
+    const dlUrl = img.srcSet[activePreset] || img.srcSet.original || '';
+
+    // Openverse CC badge (for grid overlay and list)
+    const ovBadgeClass = img.source === 'Openverse' ? (img.isCC0 ? 'license-cc0' : 'license-ccby') : '';
+    const ovBadgeLabel = img.source === 'Openverse' ? img.ovLicLabel : '';
+    const gridBadge = img.source === 'Openverse'
+      ? `<div class="license-badge ${ovBadgeClass}">${ovBadgeLabel}</div>` : '';
+    const listBadge = img.source === 'Openverse'
+      ? `<span class="list-cc-badge ${ovBadgeClass}">${ovBadgeLabel}</span>` : '';
+
+    card.innerHTML =
+      // --- Thumbnail (shown in both modes) ---
+      `<img class="img-thumb" src="${escHtml(img.thumb)}" alt="${escHtml(img.title)}" loading="lazy">` +
+      // --- Grid overlay badge ---
+      gridBadge +
+      // --- Grid footer (hidden in list mode) ---
+      `<div class="img-grid-footer">
+        <span class="img-source-badge">${img.source}</span>
+        <span class="img-dims">${img.width && img.height ? img.width + '×' + img.height : ''}</span>
+      </div>` +
+      // --- List detail panel (hidden in grid mode) ---
+      `<div class="img-list-detail">
+        <div class="list-top">
+          <div class="list-title">${escHtml(img.title)}</div>
+          <span class="list-source-badge">${img.source}</span>
+        </div>
+        <div class="list-attrs">
+          <div class="list-attr"><span class="list-attr-label">By</span><span class="list-attr-val">${photographer}</span></div>
+          <div class="list-attr"><span class="list-attr-label">Dimensions</span><span class="list-attr-val">${dims}</span></div>
+          <div class="list-attr"><span class="list-attr-label">License</span><span class="list-attr-val">${escHtml(img.license)}</span></div>
+        </div>
+        <div class="list-bottom">
+          <span class="list-license-pill">${escHtml(img.licenseNote)}</span>
+          ${listBadge}
+          <a class="list-action" href="${escHtml(dlUrl)}" target="_blank" download onclick="event.stopPropagation()">&#x2193; Download</a>
+          <a class="list-action" href="${escHtml(img.pageUrl)}" target="_blank" onclick="event.stopPropagation()">Source &#x2197;</a>
+        </div>
+      </div>`;
+
+    grid.appendChild(card);
+  });
+}
+
+// ---- Modal ----
+function openModal(img) {
+  currentModal = img;
+  activeModalSize = sizeMode === 'preset' ? activePreset : 'original';
+  document.getElementById('modalSource').textContent = img.source;
+  document.getElementById('modalTitle').textContent = img.title;
+  document.getElementById('modalImg').src = img.thumb;
+  document.getElementById('modalLicense').innerHTML = '<strong>' + escHtml(img.license) + '</strong> — ' + escHtml(img.licenseNote);
+  document.getElementById('modalOpen').href = img.pageUrl;
+  let attrHtml = '';
+  if (img.photographer) attrHtml += `<div class="attr-row"><span class="attr-label">By</span><span class="attr-val">${escHtml(img.photographer)}</span></div>`;
+  if (img.width && img.height) attrHtml += `<div class="attr-row"><span class="attr-label">Original</span><span class="attr-val">${img.width} × ${img.height} px</span></div>`;
+  document.getElementById('modalAttrs').innerHTML = attrHtml;
+  const sizeOpts = document.getElementById('modalSizeOptions');
+  sizeOpts.innerHTML = '';
+  ['small','medium','large','original'].forEach(sz => {
+    const btn = document.createElement('button');
+    btn.className = 'sz-btn' + (sz === activeModalSize ? ' active' : '');
+    btn.textContent = PRESETS[sz].label;
+    btn.onclick = (e) => { activeModalSize = sz; document.querySelectorAll('.sz-btn').forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); updateModalUrl(); };
+    sizeOpts.appendChild(btn);
+  });
+  updateModalUrl();
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function updateModalUrl() {
+  if (!currentModal) return;
+  const url = currentModal.srcSet[activeModalSize] || currentModal.srcSet.original;
+  document.getElementById('modalUrl').value = url;
+  document.getElementById('modalImg').src = url || currentModal.thumb;
+  document.getElementById('modalDownload').href = url;
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  currentModal = null;
+}
+function closeModalOnBg(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+function copyUrl() {
+  navigator.clipboard.writeText(document.getElementById('modalUrl').value).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+// ---- Errors ----
+function showError(msg) { const el = document.getElementById('errorBox'); el.textContent = msg; el.classList.remove('hidden'); }
+function clearError() { document.getElementById('errorBox').classList.add('hidden'); }
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>
