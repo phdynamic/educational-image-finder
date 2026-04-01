@@ -85,11 +85,6 @@
   .dot-pixabay { background: #2ec66d; }
   .dot-openverse { background: #e5a423; }
 
-  /* Size controls */
-  .size-preset-row { display: flex; gap: 6px; flex-wrap: wrap; }
-  .preset-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text3); font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.15s; }
-  .preset-btn.active, .preset-btn:hover { border-color: var(--purple3); color: var(--purple2); background: var(--tag-bg); }
-
   .hidden { display: none !important; }
 
   /* View toggle */
@@ -132,6 +127,7 @@
 
   /* License badge — grid (absolute over image) */
   .license-badge { position: absolute; top: 8px; right: 8px; font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; letter-spacing: 0.05em; }
+  .license-free { background: rgba(127,255,184,0.12); color: #7affb8; }
   .license-cc0 { background: rgba(127,255,184,0.15); color: #7affb8; }
   .license-ccby { background: rgba(229,164,35,0.15); color: #e5a423; }
 
@@ -209,7 +205,7 @@
   /* ---- Modal ---- */
   .modal-overlay { position: fixed; inset: 0; background: rgba(8,6,16,0.85); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
   .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal { background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; max-width: 860px; width: 100%; max-height: 90vh; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; transform: scale(0.96); transition: transform 0.2s; }
+  .modal { position: relative; background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; max-width: 860px; width: 100%; max-height: 90vh; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; transform: scale(0.96); transition: transform 0.2s; }
   .modal-overlay.open .modal { transform: scale(1); }
   .modal-img-pane { background: var(--bg3); border-radius: 16px 0 0 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 320px; }
   .modal-img-pane img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.2s; }
@@ -218,6 +214,11 @@
   .modal-source-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--purple2); background: var(--tag-bg); padding: 4px 10px; border-radius: 6px; }
   .btn-close { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); width: 30px; height: 30px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: color 0.15s, border-color 0.15s; flex-shrink: 0; }
   .btn-close:hover { color: var(--text); border-color: var(--border2); }
+  .modal-nav { position: absolute; top: 50%; transform: translateY(-50%); background: var(--surface2); border: 1px solid var(--border); color: var(--muted); width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: color 0.15s, border-color 0.15s; z-index: 101; }
+  .modal-nav:hover { color: var(--text); border-color: var(--border2); }
+  .modal-nav:disabled { opacity: 0.3; cursor: default; }
+  .modal-nav.prev { left: -48px; }
+  .modal-nav.next { right: -48px; }
   .modal-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1.3; }
   .modal-attrs { display: flex; flex-direction: column; gap: 8px; }
   .attr-row { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
@@ -230,11 +231,6 @@
   .btn-copy { background: var(--surface2); border: 1px solid var(--border2); color: var(--purple2); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; padding: 8px 14px; border-radius: var(--radius2); cursor: pointer; transition: background 0.15s; white-space: nowrap; }
   .btn-copy:hover { background: var(--tag-bg); }
   .btn-copy.copied { color: var(--success); }
-  .modal-size-section { display: flex; flex-direction: column; gap: 8px; }
-  .modal-size-label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-  .modal-size-options { display: flex; gap: 6px; flex-wrap: wrap; }
-  .sz-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text3); font-family: 'DM Sans', sans-serif; font-size: 12px; cursor: pointer; transition: all 0.15s; }
-  .sz-btn.active, .sz-btn:hover { border-color: var(--purple3); color: var(--purple2); background: var(--tag-bg); }
   .btn-download { width: 100%; background: var(--purple3); border: 1px solid var(--purple); color: var(--accent); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; padding: 13px; border-radius: var(--radius2); cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
   .btn-download:hover { background: rgba(124,92,191,0.85); }
   .btn-open { width: 100%; background: transparent; border: 1px solid var(--border2); color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 10px; border-radius: var(--radius2); cursor: pointer; transition: border-color 0.15s, color 0.15s; text-align: center; text-decoration: none; display: block; }
@@ -268,6 +264,8 @@
     .modal { grid-template-columns: 1fr; }
     .modal-img-pane { border-radius: 16px 16px 0 0; min-height: 200px; }
     #resultsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .modal-nav.prev { left: 8px; }
+    .modal-nav.next { right: 8px; }
   }
 </style>
 </head>
@@ -301,15 +299,6 @@
           <button class="chip active" id="chip-unsplash" onclick="toggleChip('unsplash')"><span class="dot dot-unsplash"></span>Unsplash</button>
           <button class="chip active" id="chip-pixabay" onclick="toggleChip('pixabay')"><span class="dot dot-pixabay"></span>Pixabay</button>
           <button class="chip active" id="chip-openverse" onclick="toggleChip('openverse')"><span class="dot dot-openverse"></span>Openverse</button>
-        </div>
-      </div>
-
-      <!-- Size -->
-      <div class="control-group">
-        <label>Size</label>
-        <div class="size-preset-row">
-          <button class="preset-btn active" id="psz-large" onclick="setPreset('large')">Large</button>
-          <button class="preset-btn" id="psz-original" onclick="setPreset('original')">Original</button>
         </div>
       </div>
 
@@ -358,6 +347,8 @@
 <!-- Modal -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOnBg(event)">
   <div class="modal" id="modal">
+    <button class="modal-nav prev" id="modalPrev" onclick="navigateModal(-1)">&#x2039;</button>
+    <button class="modal-nav next" id="modalNext" onclick="navigateModal(1)">&#x203A;</button>
     <div class="modal-img-pane">
       <img id="modalImg" src="" alt="">
     </div>
@@ -369,10 +360,6 @@
       <div class="modal-title" id="modalTitle"></div>
       <div class="modal-attrs" id="modalAttrs"></div>
       <div class="license-info" id="modalLicense"></div>
-      <div class="modal-size-section">
-        <div class="modal-size-label">Download size</div>
-        <div class="modal-size-options" id="modalSizeOptions"></div>
-      </div>
       <div>
         <div class="modal-size-label" style="margin-bottom:6px;">Image URL</div>
         <div class="url-copy-row">
@@ -392,9 +379,8 @@
 // ---- State ----
 let activeSources = { pexels: true, unsplash: true, pixabay: true, openverse: true };
 
-let activePreset = 'large';
 let currentModal = null;
-let activeModalSize = 'large';
+let allItems = [];        // all loaded images for modal navigation
 let viewMode = 'grid';
 
 // Pagination state
@@ -405,11 +391,6 @@ let totalLoaded = 0;
 let sourceCounts = {};    // per-source loaded count
 let isSearching = false;  // prevents duplicate searches
 const PER_SOURCE = 13;    // ~13 × 4 sources = ~52 per load
-
-const PRESETS = {
-  large:    { label: 'Large' },
-  original: { label: 'Original' },
-};
 
 // ---- API Keys (hardcoded) ----
 // SECURITY NOTE: These keys are visible to anyone who views page source.
@@ -423,13 +404,6 @@ const KEY_PIXABAY  = '18017390-57da3d02482166a97cd417d7d';
 function toggleChip(src) {
   activeSources[src] = !activeSources[src];
   document.getElementById('chip-' + src).classList.toggle('active', activeSources[src]);
-}
-
-// ---- Size mode ----
-function setPreset(p) {
-  activePreset = p;
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('psz-' + p).classList.add('active');
 }
 
 // ---- View mode ----
@@ -586,8 +560,9 @@ async function fetchOpenverse(q, page) {
 // ---- Render a batch of cards (append mode) ----
 function renderBatch(items, fresh) {
   const grid = document.getElementById('resultsGrid');
-  if (fresh) grid.innerHTML = '';
+  if (fresh) { grid.innerHTML = ''; allItems = []; }
   if (viewMode === 'list') { grid.classList.add('list-view'); } else { grid.classList.remove('list-view'); }
+  allItems.push(...items);
 
   items.forEach(img => {
     const card = document.createElement('div');
@@ -596,11 +571,18 @@ function renderBatch(items, fresh) {
 
     const dims = (img.width && img.height) ? img.width + ' × ' + img.height + ' px' : 'Unknown';
     const photographer = img.photographer ? escHtml(img.photographer) : 'Unknown';
-    const dlUrl = img.srcSet[activePreset] || img.srcSet.original || '';
-    const ovBadgeClass = img.source === 'Openverse' ? (img.isCC0 ? 'license-cc0' : 'license-ccby') : '';
-    const ovBadgeLabel = img.source === 'Openverse' ? img.ovLicLabel : '';
-    const gridBadge = img.source === 'Openverse' ? `<div class="license-badge ${ovBadgeClass}">${ovBadgeLabel}</div>` : '';
-    const listBadge = img.source === 'Openverse' ? `<span class="list-cc-badge ${ovBadgeClass}">${ovBadgeLabel}</span>` : '';
+    const dlUrl = img.srcSet.original || '';
+    // License badges for all sources
+    let badgeClass, badgeLabel;
+    if (img.source === 'Openverse') {
+      badgeClass = img.isCC0 ? 'license-cc0' : 'license-ccby';
+      badgeLabel = img.ovLicLabel;
+    } else {
+      badgeClass = 'license-free';
+      badgeLabel = 'Free';
+    }
+    const gridBadge = `<div class="license-badge ${badgeClass}">${badgeLabel}</div>`;
+    const listBadge = `<span class="list-cc-badge ${badgeClass}">${badgeLabel}</span>`;
 
     card.innerHTML =
       `<img class="img-thumb" src="${escHtml(img.thumb)}" alt="${escHtml(img.title)}" loading="lazy">` +
@@ -683,11 +665,9 @@ function showLoading() {
 // ---- Modal ----
 function openModal(img) {
   currentModal = img;
-  activeModalSize = activePreset;
   document.getElementById('modalSource').textContent = img.source;
   document.getElementById('modalTitle').textContent = img.title;
   document.getElementById('modalImg').src = img.thumb;
-  // Use textContent for license fields to avoid any innerHTML injection risk
   const licenseEl = document.getElementById('modalLicense');
   licenseEl.innerHTML = '';
   const strong = document.createElement('strong');
@@ -697,25 +677,17 @@ function openModal(img) {
   document.getElementById('modalOpen').href = img.pageUrl;
   let attrHtml = '';
   if (img.photographer) attrHtml += `<div class="attr-row"><span class="attr-label">By</span><span class="attr-val">${escHtml(img.photographer)}</span></div>`;
-  if (img.width && img.height) attrHtml += `<div class="attr-row"><span class="attr-label">Original</span><span class="attr-val">${img.width} × ${img.height} px</span></div>`;
+  if (img.width && img.height) attrHtml += `<div class="attr-row"><span class="attr-label">Size</span><span class="attr-val">${img.width} × ${img.height} px</span></div>`;
   document.getElementById('modalAttrs').innerHTML = attrHtml;
-  const sizeOpts = document.getElementById('modalSizeOptions');
-  sizeOpts.innerHTML = '';
-  ['large','original'].forEach(sz => {
-    const btn = document.createElement('button');
-    btn.className = 'sz-btn' + (sz === activeModalSize ? ' active' : '');
-    btn.textContent = PRESETS[sz].label;
-    btn.onclick = (e) => { activeModalSize = sz; document.querySelectorAll('.sz-btn').forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); updateModalUrl(); };
-    sizeOpts.appendChild(btn);
-  });
   updateModalUrl();
+  updateModalNav();
   document.getElementById('modalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
 function updateModalUrl() {
   if (!currentModal) return;
-  const url = currentModal.srcSet[activeModalSize] || currentModal.srcSet.original;
+  const url = currentModal.srcSet.original;
   document.getElementById('modalUrl').value = url;
   const imgEl = document.getElementById('modalImg');
   imgEl.style.opacity = '0.5';
@@ -723,11 +695,21 @@ function updateModalUrl() {
   imgEl.onload = () => { imgEl.style.opacity = '1'; };
   const dlLink = document.getElementById('modalDownload');
   dlLink.href = url;
-  if (currentModal.filename) {
-    dlLink.setAttribute('download', currentModal.filename);
-  } else {
-    dlLink.setAttribute('download', '');
-  }
+  dlLink.setAttribute('download', currentModal.filename || '');
+}
+
+function navigateModal(dir) {
+  if (!currentModal) return;
+  const idx = allItems.findIndex(i => i.id === currentModal.id);
+  const next = idx + dir;
+  if (next >= 0 && next < allItems.length) openModal(allItems[next]);
+}
+
+function updateModalNav() {
+  if (!currentModal) return;
+  const idx = allItems.findIndex(i => i.id === currentModal.id);
+  document.getElementById('modalPrev').disabled = idx <= 0;
+  document.getElementById('modalNext').disabled = idx >= allItems.length - 1;
 }
 
 function closeModal() {
@@ -750,7 +732,11 @@ function showError(msg) { const el = document.getElementById('errorBox'); el.tex
 function clearError() { document.getElementById('errorBox').classList.add('hidden'); }
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'ArrowLeft' && currentModal) navigateModal(-1);
+  if (e.key === 'ArrowRight' && currentModal) navigateModal(1);
+});
 </script>
 </body>
 </html>
