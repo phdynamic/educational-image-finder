@@ -86,8 +86,6 @@
   .dot-openverse { background: #e5a423; }
   .dot-wikimedia { background: #069; }
   .dot-nasa { background: #fc3d21; }
-  .dot-loc { background: #c9a96e; }
-  .dot-smithsonian { background: #d4a84b; }
 
   /* Free-only toggle */
   .toggle-wrap { display: flex; align-items: center; gap: 8px; }
@@ -115,7 +113,7 @@
   /* ---- GRID VIEW ---- */
   #resultsGrid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
   }
 
@@ -219,10 +217,10 @@
   /* ---- Modal ---- */
   .modal-overlay { position: fixed; inset: 0; background: rgba(8,6,16,0.85); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
   .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal { position: relative; background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; max-width: 860px; width: 100%; max-height: 90vh; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; transform: scale(0.96); transition: transform 0.2s; }
+  .modal { position: relative; background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; max-width: 1100px; width: 100%; max-height: 92vh; overflow-y: auto; display: grid; grid-template-columns: 3fr 2fr; transform: scale(0.96); transition: transform 0.2s; }
   .modal-overlay.open .modal { transform: scale(1); }
-  .modal-img-pane { background: var(--bg3); border-radius: 16px 0 0 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 320px; }
-  .modal-img-pane img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.2s; }
+  .modal-img-pane { background: var(--bg3); border-radius: 16px 0 0 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 420px; }
+  .modal-img-pane img { width: 100%; height: 100%; object-fit: contain; display: block; transition: opacity 0.2s; }
   .modal-info-pane { padding: 28px 28px 24px; display: flex; flex-direction: column; gap: 20px; }
   .modal-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .modal-source-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--purple2); background: var(--tag-bg); padding: 4px 10px; border-radius: 6px; }
@@ -315,8 +313,6 @@
           <button class="chip active" id="chip-openverse" onclick="toggleChip('openverse')"><span class="dot dot-openverse"></span>Openverse</button>
           <button class="chip active" id="chip-wikimedia" onclick="toggleChip('wikimedia')"><span class="dot dot-wikimedia"></span>Wikimedia</button>
           <button class="chip active" id="chip-nasa" onclick="toggleChip('nasa')"><span class="dot dot-nasa"></span>NASA</button>
-          <button class="chip active" id="chip-loc" onclick="toggleChip('loc')"><span class="dot dot-loc"></span>Library of Congress</button>
-          <button class="chip active" id="chip-smithsonian" onclick="toggleChip('smithsonian')"><span class="dot dot-smithsonian"></span>Smithsonian</button>
         </div>
       </div>
 
@@ -414,8 +410,8 @@
 
 <script>
 // ---- State ----
-const ALL_SOURCES = ['pexels','unsplash','pixabay','openverse','wikimedia','nasa','loc','smithsonian'];
-const SOURCE_LABELS = { pexels:'Pexels', unsplash:'Unsplash', pixabay:'Pixabay', openverse:'Openverse', wikimedia:'Wikimedia', nasa:'NASA', loc:'LOC', smithsonian:'Smithsonian' };
+const ALL_SOURCES = ['pexels','unsplash','pixabay','openverse','wikimedia','nasa'];
+const SOURCE_LABELS = { pexels:'Pexels', unsplash:'Unsplash', pixabay:'Pixabay', openverse:'Openverse', wikimedia:'Wikimedia', nasa:'NASA' };
 let activeSources = Object.fromEntries(ALL_SOURCES.map(s => [s, true]));
 
 let currentModal = null;
@@ -430,7 +426,8 @@ let exhausted = {};       // per-source: true when no more pages
 let totalLoaded = 0;
 let sourceCounts = {};    // per-source loaded count
 let isSearching = false;  // prevents duplicate searches
-const PER_SOURCE = 8;     // ~8 × 9 sources = ~72 per load
+const PER_SOURCE = 12;    // ~12 × 6 sources = ~72 per load
+const MIN_DIM = 500;      // exclude images smaller than 500×500 (when dimensions known)
 
 // ---- API Keys (hardcoded) ----
 // SECURITY NOTE: These keys are visible to anyone who views page source.
@@ -439,7 +436,6 @@ const PER_SOURCE = 8;     // ~8 × 9 sources = ~72 per load
 const KEY_PEXELS      = '1DQboNmA7nYSIxexbVctwCz6CrXEMEudhlCW5GxCw8C5tJfA1wf3DkKX';
 const KEY_UNSPLASH    = 'dtzOYQ0iqydb5FdzbmJl72p2bW5l80QgyAHQkzNU8BY';
 const KEY_PIXABAY     = '18017390-57da3d02482166a97cd417d7d';
-const KEY_SMITHSONIAN = '560T6Xa7sLheylfsv4AJx2vIUgsFQBkZR2oEOftf';
 
 // ---- Source toggles ----
 function toggleChip(src) {
@@ -562,7 +558,6 @@ function shuffle(arr) {
 const FETCHERS = {
   pexels: fetchPexels, unsplash: fetchUnsplash, pixabay: fetchPixabay,
   openverse: fetchOpenverse, wikimedia: fetchWikimedia, nasa: fetchNasa,
-  loc: fetchLoc, smithsonian: fetchSmithsonian,
 };
 
 // ---- Fetch one page across active sources ----
@@ -576,10 +571,14 @@ async function fetchPage(q) {
   const all = [], errors = [];
   results.forEach(r => {
     if (r.status === 'fulfilled') {
-      all.push(...r.value.items);
+      // Filter out images below minimum dimensions (when known)
+      const sizedItems = r.value.items.filter(img =>
+        !img.width || !img.height || (img.width >= MIN_DIM && img.height >= MIN_DIM)
+      );
+      all.push(...sizedItems);
       const src = r.value.source;
       pageState[src]++;
-      sourceCounts[src] = (sourceCounts[src] || 0) + r.value.items.length;
+      sourceCounts[src] = (sourceCounts[src] || 0) + sizedItems.length;
       if (r.value.items.length < PER_SOURCE) exhausted[src] = true;
     } else {
       errors.push(r.reason);
@@ -597,7 +596,7 @@ async function fetchPexels(q, page) {
   const items = (data.photos || []).map(p => ({
     id: 'px_' + p.id, source: 'Pexels',
     title: p.alt || 'Pexels photo', photographer: p.photographer,
-    thumb: p.src.medium,
+    thumb: p.src.large,
     srcSet: { small: p.src.small, medium: p.src.medium, large: p.src.large, original: p.src.original },
     width: p.width, height: p.height, pageUrl: p.url,
     license: 'Pexels License', licenseNote: 'Free to use for any purpose. No attribution required.', isCC0: true,
@@ -612,7 +611,7 @@ async function fetchUnsplash(q, page) {
   const items = (data.results || []).map(p => ({
     id: 'us_' + p.id, source: 'Unsplash',
     title: p.description || p.alt_description || 'Unsplash photo', photographer: p.user?.name,
-    thumb: p.urls.small,
+    thumb: p.urls.regular,
     srcSet: { small: p.urls.thumb, medium: p.urls.small, large: p.urls.regular, original: p.urls.full },
     width: p.width, height: p.height, pageUrl: p.links.html,
     license: 'Unsplash License', licenseNote: 'Free to use for any purpose. No attribution required (appreciated).', isCC0: true,
@@ -659,7 +658,7 @@ async function fetchOpenverse(q, page) {
 
 async function fetchWikimedia(q, page) {
   const offset = (page - 1) * PER_SOURCE;
-  const res = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(q)}&gsrlimit=${PER_SOURCE}&gsroffset=${offset}&prop=imageinfo&iiprop=url|extmetadata|size|mime&iiurlwidth=400&format=json&origin=*`);
+  const res = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(q)}&gsrlimit=${PER_SOURCE}&gsroffset=${offset}&prop=imageinfo&iiprop=url|extmetadata|size|mime&iiurlwidth=600&format=json&origin=*`);
   if (!res.ok) throw new Error('Wikimedia: ' + res.status);
   const data = await res.json();
   const pages = data.query?.pages || {};
@@ -713,61 +712,6 @@ async function fetchNasa(q, page) {
   const hasNext = (collection.links || []).some(l => l.rel === 'next');
   if (!hasNext) exhausted.nasa = true;
   return { source: 'nasa', items };
-}
-
-async function fetchLoc(q, page) {
-  const res = await fetch(`https://www.loc.gov/search/?q=${encodeURIComponent(q)}&fa=online-format:image&fo=json&sp=${page}&c=${PER_SOURCE}`);
-  if (!res.ok) throw new Error('LOC: ' + res.status);
-  const data = await res.json();
-  const items = (data.results || []).filter(r => r.image_url?.length > 0).map(r => {
-    const images = r.image_url;
-    const thumb = images[0].startsWith('//') ? 'https:' + images[0] : images[0];
-    const full = images[images.length - 1].startsWith('//') ? 'https:' + images[images.length - 1] : images[images.length - 1];
-    const creator = Array.isArray(r.contributor) ? r.contributor[0] : (Array.isArray(r.creator) ? r.creator[0] : 'Unknown');
-    return {
-      id: 'loc_' + (r.id || Math.random()).toString().replace(/\W/g, ''), source: 'LOC',
-      title: r.title || 'Library of Congress image', photographer: creator,
-      thumb: thumb,
-      srcSet: { small: thumb, medium: thumb, large: full, original: full },
-      width: null, height: null,
-      pageUrl: r.url || r.id,
-      license: 'No known restrictions', licenseNote: 'Library of Congress — Generally free to use. No known copyright restrictions.',
-      isCC0: true,
-    };
-  });
-  const pagination = data.pagination || {};
-  if (!pagination.next) exhausted.loc = true;
-  return { source: 'loc', items };
-}
-
-async function fetchSmithsonian(q, page) {
-  const offset = (page - 1) * PER_SOURCE;
-  const res = await fetch(`https://api.si.edu/openaccess/api/v1.0/search?q=${encodeURIComponent(q)}&images_only=true&rows=${PER_SOURCE}&start=${offset}&api_key=${KEY_SMITHSONIAN}`);
-  if (!res.ok) throw new Error('Smithsonian: ' + res.status);
-  const data = await res.json();
-  const response = data.response || {};
-  const items = (response.rows || []).filter(row => {
-    const media = row.content?.descriptiveNonRepeating?.online_media?.media;
-    return media?.length > 0 && media[0].thumbnail;
-  }).map(row => {
-    const desc = row.content?.descriptiveNonRepeating || {};
-    const media = desc.online_media.media[0];
-    const freetext = row.content?.freetext || {};
-    const creatorEntry = (freetext.name || []).find(n => n.label === 'Creator' || n.label === 'Artist');
-    return {
-      id: 'si_' + row.id, source: 'Smithsonian',
-      title: desc.title?.content || row.title || 'Smithsonian item',
-      photographer: creatorEntry?.content || 'Smithsonian Institution',
-      thumb: media.thumbnail,
-      srcSet: { small: media.thumbnail, medium: media.content || media.thumbnail, large: media.content || media.thumbnail, original: media.content || media.thumbnail },
-      width: null, height: null,
-      pageUrl: desc.record_link || desc.guid || `https://www.si.edu/object/${row.id}`,
-      license: 'CC0', licenseNote: 'Smithsonian Open Access — CC0, free to use without attribution.',
-      isCC0: true,
-    };
-  });
-  if (offset + PER_SOURCE >= (response.rowCount || 0)) exhausted.smithsonian = true;
-  return { source: 'smithsonian', items };
 }
 
 // ---- Build a single image card element ----
