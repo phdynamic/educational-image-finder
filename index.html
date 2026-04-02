@@ -146,6 +146,15 @@
   /* List detail — hidden in grid mode */
   .img-list-detail { display: none; }
 
+  /* ---- COMPACT VIEW ---- */
+  #resultsGrid.compact-view {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+  }
+  #resultsGrid.compact-view .img-thumb { aspect-ratio: 1/1; }
+  #resultsGrid.compact-view .img-grid-footer { display: none; }
+  #resultsGrid.compact-view .license-badge { font-size: 8px; padding: 1px 5px; top: 4px; right: 4px; }
+
   /* ---- LIST VIEW ---- */
   #resultsGrid.list-view {
     display: flex;
@@ -276,6 +285,7 @@
     .modal { grid-template-columns: 1fr; }
     .modal-img-pane { border-radius: 16px 16px 0 0; min-height: 200px; }
     #resultsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #resultsGrid.compact-view { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .modal-nav.prev { left: 8px; }
     .modal-nav.next { right: 8px; }
   }
@@ -354,25 +364,41 @@
         </div>
       </div>
 
-      <!-- View -->
-      <div class="control-group" style="margin-left:auto;">
-        <label>View</label>
-        <div class="view-toggle">
-          <button class="view-btn active" id="btn-grid" onclick="setViewMode('grid')" title="Grid view">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <rect x="1" y="1" width="6" height="6" rx="1"/>
-              <rect x="9" y="1" width="6" height="6" rx="1"/>
-              <rect x="1" y="9" width="6" height="6" rx="1"/>
-              <rect x="9" y="9" width="6" height="6" rx="1"/>
-            </svg>
-          </button>
-          <button class="view-btn" id="btn-list" onclick="setViewMode('list')" title="List view">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <rect x="1" y="2" width="14" height="2.5" rx="1"/>
-              <rect x="1" y="6.75" width="14" height="2.5" rx="1"/>
-              <rect x="1" y="11.5" width="14" height="2.5" rx="1"/>
-            </svg>
-          </button>
+      <!-- Orientation filter -->
+      <div class="control-group">
+        <label>Orientation</label>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="landscapeToggle" onchange="setOrientationFilter('landscape')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="landscapeToggle">Landscape</label>
+        </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="portraitToggle" onchange="setOrientationFilter('portrait')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="portraitToggle">Portrait</label>
+        </div>
+      </div>
+
+      <!-- Type filter -->
+      <div class="control-group">
+        <label>Type</label>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="photoToggle" onchange="setTypeFilter('photo')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="photoToggle">Photo</label>
+        </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="illustrationToggle" onchange="setTypeFilter('illustration')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="illustrationToggle">Illustration</label>
         </div>
       </div>
     </div>
@@ -384,6 +410,36 @@
   <!-- Results header -->
   <div class="results-header" id="resultsHeader" style="display:none;">
     <div class="results-count" id="resultsCount"></div>
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-grid" onclick="setViewMode('grid')" title="Grid view">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <rect x="1" y="1" width="6" height="6" rx="1"/>
+          <rect x="9" y="1" width="6" height="6" rx="1"/>
+          <rect x="1" y="9" width="6" height="6" rx="1"/>
+          <rect x="9" y="9" width="6" height="6" rx="1"/>
+        </svg>
+      </button>
+      <button class="view-btn" id="btn-compact" onclick="setViewMode('compact')" title="Compact view">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <rect x="1" y="1" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="6.25" y="1" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="11.5" y="1" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="1" y="6.25" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="6.25" y="6.25" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="11.5" y="6.25" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="1" y="11.5" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="6.25" y="11.5" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="11.5" y="11.5" width="3.5" height="3.5" rx="0.5"/>
+        </svg>
+      </button>
+      <button class="view-btn" id="btn-list" onclick="setViewMode('list')" title="List view">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <rect x="1" y="2" width="14" height="2.5" rx="1"/>
+          <rect x="1" y="6.75" width="14" height="2.5" rx="1"/>
+          <rect x="1" y="11.5" width="14" height="2.5" rx="1"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <!-- Results -->
@@ -438,6 +494,8 @@ let allItems = [];        // all loaded images for modal navigation
 let viewMode = 'grid';
 let licenseFilter = 'all'; // 'all', 'free' (no attribution), or 'attribution' (attribution required)
 let sizeFilter = 'all';    // 'all', 'large' (>=1000), or 'xl' (>=5000)
+let orientationFilter = 'all'; // 'all', 'landscape', or 'portrait'
+let typeFilter = 'all';    // 'all', 'photo', or 'illustration'
 
 // Pagination state
 let currentQuery = '';
@@ -467,10 +525,12 @@ function toggleChip(src) {
 function setViewMode(mode) {
   viewMode = mode;
   document.getElementById('btn-grid').classList.toggle('active', mode === 'grid');
+  document.getElementById('btn-compact').classList.toggle('active', mode === 'compact');
   document.getElementById('btn-list').classList.toggle('active', mode === 'list');
   const grid = document.getElementById('resultsGrid');
-  if (mode === 'list') { grid.classList.add('list-view'); }
-  else { grid.classList.remove('list-view'); }
+  grid.classList.remove('list-view', 'compact-view');
+  if (mode === 'list') grid.classList.add('list-view');
+  else if (mode === 'compact') grid.classList.add('compact-view');
 }
 
 // ---- Filters ----
@@ -480,6 +540,10 @@ function applyFilter(items) {
   else if (licenseFilter === 'attribution') filtered = filtered.filter(img => !img.isCC0);
   if (sizeFilter === 'large') filtered = filtered.filter(img => img.width >= 1000 && img.height >= 1000);
   else if (sizeFilter === 'xl') filtered = filtered.filter(img => img.width >= 5000 && img.height >= 5000);
+  if (orientationFilter === 'landscape') filtered = filtered.filter(img => img.width && img.height && img.width > img.height);
+  else if (orientationFilter === 'portrait') filtered = filtered.filter(img => img.width && img.height && img.height > img.width);
+  if (typeFilter === 'photo') filtered = filtered.filter(img => img.mediaType === 'photo');
+  else if (typeFilter === 'illustration') filtered = filtered.filter(img => img.mediaType === 'illustration');
   return filtered;
 }
 
@@ -509,11 +573,39 @@ function setLicenseFilter(mode) {
   if (allItems.length > 0) reRender();
 }
 
+function setOrientationFilter(mode) {
+  const lEl = document.getElementById('landscapeToggle');
+  const pEl = document.getElementById('portraitToggle');
+  if (mode === 'landscape') {
+    if (lEl.checked) { orientationFilter = 'landscape'; pEl.checked = false; }
+    else { orientationFilter = 'all'; }
+  } else {
+    if (pEl.checked) { orientationFilter = 'portrait'; lEl.checked = false; }
+    else { orientationFilter = 'all'; }
+  }
+  if (allItems.length > 0) reRender();
+}
+
+function setTypeFilter(mode) {
+  const phEl = document.getElementById('photoToggle');
+  const ilEl = document.getElementById('illustrationToggle');
+  if (mode === 'photo') {
+    if (phEl.checked) { typeFilter = 'photo'; ilEl.checked = false; }
+    else { typeFilter = 'all'; }
+  } else {
+    if (ilEl.checked) { typeFilter = 'illustration'; phEl.checked = false; }
+    else { typeFilter = 'all'; }
+  }
+  if (allItems.length > 0) reRender();
+}
+
 function reRender() {
   const filtered = applyFilter(allItems);
   const grid = document.getElementById('resultsGrid');
   grid.innerHTML = '';
-  if (viewMode === 'list') { grid.classList.add('list-view'); } else { grid.classList.remove('list-view'); }
+  grid.classList.remove('list-view', 'compact-view');
+  if (viewMode === 'list') grid.classList.add('list-view');
+  else if (viewMode === 'compact') grid.classList.add('compact-view');
   filtered.forEach(img => grid.appendChild(buildCard(img)));
   const header = document.getElementById('resultsHeader');
   const stateBox = document.getElementById('stateBox');
@@ -635,7 +727,7 @@ async function fetchPexels(q, page) {
     thumb: p.src.large,
     srcSet: { small: p.src.small, medium: p.src.medium, large: p.src.large, original: p.src.original },
     width: p.width, height: p.height, pageUrl: p.url,
-    license: 'Pexels License', licenseNote: 'Free to use for any purpose. No attribution required.', isCC0: true,
+    license: 'Pexels License', licenseNote: 'Free to use for any purpose. No attribution required.', isCC0: true, mediaType: 'photo',
   }));
   return { source: 'pexels', items };
 }
@@ -650,7 +742,7 @@ async function fetchUnsplash(q, page) {
     thumb: p.urls.regular,
     srcSet: { small: p.urls.thumb, medium: p.urls.small, large: p.urls.regular, original: p.urls.full },
     width: p.width, height: p.height, pageUrl: p.links.html,
-    license: 'Unsplash License', licenseNote: 'Free to use for any purpose. No attribution required (appreciated).', isCC0: true,
+    license: 'Unsplash License', licenseNote: 'Free to use for any purpose. No attribution required (appreciated).', isCC0: true, mediaType: 'photo',
   }));
   return { source: 'unsplash', items };
 }
@@ -666,6 +758,7 @@ async function fetchPixabay(q, page) {
     srcSet: { small: p.previewURL, medium: p.webformatURL, large: p.largeImageURL, original: p.fullHDURL || p.largeImageURL },
     width: p.imageWidth, height: p.imageHeight, pageUrl: p.pageURL,
     license: 'Pixabay License', licenseNote: 'Free for commercial and educational use. No attribution required.', isCC0: true,
+    mediaType: (p.type === 'illustration' || p.type === 'vector') ? 'illustration' : 'photo',
   }));
   return { source: 'pixabay', items };
 }
@@ -687,6 +780,7 @@ async function fetchOpenverse(q, page) {
       pageUrl: p.foreign_landing_url || p.url,
       license: licLabel, licenseNote: isCC0 ? 'CC0 — No rights reserved. Free to use without any attribution.' : 'CC BY — Free to use with attribution to the creator.',
       isCC0, ovLicLabel: isCC0 ? 'CC0' : 'CC BY',
+      mediaType: (p.category === 'illustration' || p.category === 'digitized_artwork') ? 'illustration' : 'photo',
     };
   });
   return { source: 'openverse', items };
@@ -718,7 +812,7 @@ async function fetchWikimedia(q, page) {
       width: info.width || null, height: info.height || null,
       pageUrl: info.descriptionurl,
       license: licLabel, licenseNote: isCC0 ? 'Public domain / CC0 — Free to use without attribution.' : licLabel + ' — Attribution may be required.',
-      isCC0,
+      isCC0, mediaType: (info.mime === 'image/svg+xml' || info.mime === 'image/png') ? 'illustration' : 'photo',
     };
   });
   if (!data.continue) exhausted.wikimedia = true;
@@ -742,7 +836,7 @@ async function fetchNasa(q, page) {
       width: null, height: null,
       pageUrl: `https://images.nasa.gov/details/${nasaId}`,
       license: 'Public Domain', licenseNote: 'NASA public domain — Free to use. Courtesy credit to NASA appreciated.',
-      isCC0: true,
+      isCC0: true, mediaType: 'photo',
     };
   });
   const hasNext = (collection.links || []).some(l => l.rel === 'next');
@@ -799,7 +893,9 @@ function buildCard(img) {
 function renderBatch(items, fresh) {
   const grid = document.getElementById('resultsGrid');
   if (fresh) { grid.innerHTML = ''; allItems = []; }
-  if (viewMode === 'list') { grid.classList.add('list-view'); } else { grid.classList.remove('list-view'); }
+  grid.classList.remove('list-view', 'compact-view');
+  if (viewMode === 'list') grid.classList.add('list-view');
+  else if (viewMode === 'compact') grid.classList.add('compact-view');
   allItems.push(...items);
 
   const visible = applyFilter(items);
