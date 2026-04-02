@@ -85,6 +85,16 @@
   .dot-pixabay { background: #2ec66d; }
   .dot-openverse { background: #e5a423; }
 
+  /* Free-only toggle */
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+  .toggle-label { font-size: 12px; color: var(--text2); font-weight: 500; white-space: nowrap; cursor: pointer; user-select: none; }
+  .toggle-switch { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-track { position: absolute; inset: 0; background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+  .toggle-track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: var(--muted); border-radius: 50%; transition: transform 0.2s, background 0.2s; }
+  .toggle-switch input:checked + .toggle-track { background: var(--purple3); border-color: var(--purple); }
+  .toggle-switch input:checked + .toggle-track::after { transform: translateX(16px); background: var(--accent); }
+
   .hidden { display: none !important; }
 
   /* View toggle */
@@ -302,6 +312,18 @@
         </div>
       </div>
 
+      <!-- Free only toggle -->
+      <div class="control-group">
+        <label>License</label>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="freeOnlyToggle" onchange="toggleFreeOnly()">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="freeOnlyToggle">No attribution</label>
+        </div>
+      </div>
+
       <!-- View -->
       <div class="control-group" style="margin-left:auto;">
         <label>View</label>
@@ -382,6 +404,7 @@ let activeSources = { pexels: true, unsplash: true, pixabay: true, openverse: tr
 let currentModal = null;
 let allItems = [];        // all loaded images for modal navigation
 let viewMode = 'grid';
+let freeOnly = false;     // when true, hide images requiring attribution
 
 // Pagination state
 let currentQuery = '';
@@ -414,6 +437,42 @@ function setViewMode(mode) {
   const grid = document.getElementById('resultsGrid');
   if (mode === 'list') { grid.classList.add('list-view'); }
   else { grid.classList.remove('list-view'); }
+}
+
+// ---- Free-only filter ----
+function toggleFreeOnly() {
+  freeOnly = document.getElementById('freeOnlyToggle').checked;
+  if (allItems.length > 0) reRender();
+}
+
+function reRender() {
+  const filtered = freeOnly ? allItems.filter(img => img.isCC0) : allItems;
+  const grid = document.getElementById('resultsGrid');
+  grid.innerHTML = '';
+  if (viewMode === 'list') { grid.classList.add('list-view'); } else { grid.classList.remove('list-view'); }
+  filtered.forEach(img => grid.appendChild(buildCard(img)));
+  // Update count display
+  const header = document.getElementById('resultsHeader');
+  const stateBox = document.getElementById('stateBox');
+  if (filtered.length === 0 && allItems.length > 0) {
+    stateBox.innerHTML = '<div class="big">&#x1F512;</div><p>All results require attribution. Disable the "No attribution" filter or try different keywords.</p>';
+    stateBox.style.display = 'block';
+    header.style.display = 'none';
+  } else if (filtered.length === 0) {
+    stateBox.style.display = 'block';
+    header.style.display = 'none';
+  } else {
+    stateBox.style.display = 'none';
+    header.style.display = 'flex';
+  }
+  const breakdown = Object.keys(sourceCounts)
+    .filter(src => sourceCounts[src] > 0)
+    .map(src => src.charAt(0).toUpperCase() + src.slice(1) + ' ' + sourceCounts[src])
+    .join(' · ');
+  const countLabel = freeOnly
+    ? '<strong>' + filtered.length + '</strong> of ' + allItems.length + ' images (attribution-free only)'
+    : '<strong>' + allItems.length + '</strong> images loaded';
+  document.getElementById('resultsCount').innerHTML = countLabel + (breakdown ? ' &nbsp;—&nbsp; ' + breakdown : '');
 }
 
 // ---- Search (fresh) ----
@@ -557,6 +616,51 @@ async function fetchOpenverse(q, page) {
   return { source: 'openverse', items };
 }
 
+// ---- Build a single image card element ----
+function buildCard(img) {
+  const card = document.createElement('div');
+  card.className = 'img-card';
+  card.onclick = () => openModal(img);
+
+  const dims = (img.width && img.height) ? img.width + ' × ' + img.height + ' px' : 'Unknown';
+  const photographer = img.photographer ? escHtml(img.photographer) : 'Unknown';
+  const dlUrl = img.srcSet.original || '';
+  let badgeClass, badgeLabel;
+  if (img.source === 'Openverse') {
+    badgeClass = img.isCC0 ? 'license-cc0' : 'license-ccby';
+    badgeLabel = img.ovLicLabel;
+  } else {
+    badgeClass = 'license-free';
+    badgeLabel = 'Free';
+  }
+
+  card.innerHTML =
+    `<img class="img-thumb" src="${escHtml(img.thumb)}" alt="${escHtml(img.title)}" loading="lazy">` +
+    `<div class="license-badge ${badgeClass}">${badgeLabel}</div>` +
+    `<div class="img-grid-footer">
+      <span class="img-source-badge">${img.source}</span>
+      <span class="img-dims">${img.width && img.height ? img.width + '×' + img.height : ''}</span>
+    </div>` +
+    `<div class="img-list-detail">
+      <div class="list-top">
+        <div class="list-title">${escHtml(img.title)}</div>
+        <span class="list-source-badge">${img.source}</span>
+      </div>
+      <div class="list-attrs">
+        <div class="list-attr"><span class="list-attr-label">By</span><span class="list-attr-val">${photographer}</span></div>
+        <div class="list-attr"><span class="list-attr-label">Dimensions</span><span class="list-attr-val">${dims}</span></div>
+        <div class="list-attr"><span class="list-attr-label">License</span><span class="list-attr-val">${escHtml(img.license)}</span></div>
+      </div>
+      <div class="list-bottom">
+        <span class="list-license-pill">${escHtml(img.licenseNote)}</span>
+        <span class="list-cc-badge ${badgeClass}">${badgeLabel}</span>
+        <a class="list-action" href="${escHtml(dlUrl)}" target="_blank" download onclick="event.stopPropagation()">&#x2193; Download</a>
+        <a class="list-action" href="${escHtml(img.pageUrl)}" target="_blank" onclick="event.stopPropagation()">Source &#x2197;</a>
+      </div>
+    </div>`;
+  return card;
+}
+
 // ---- Render a batch of cards (append mode) ----
 function renderBatch(items, fresh) {
   const grid = document.getElementById('resultsGrid');
@@ -564,52 +668,8 @@ function renderBatch(items, fresh) {
   if (viewMode === 'list') { grid.classList.add('list-view'); } else { grid.classList.remove('list-view'); }
   allItems.push(...items);
 
-  items.forEach(img => {
-    const card = document.createElement('div');
-    card.className = 'img-card';
-    card.onclick = () => openModal(img);
-
-    const dims = (img.width && img.height) ? img.width + ' × ' + img.height + ' px' : 'Unknown';
-    const photographer = img.photographer ? escHtml(img.photographer) : 'Unknown';
-    const dlUrl = img.srcSet.original || '';
-    // License badges for all sources
-    let badgeClass, badgeLabel;
-    if (img.source === 'Openverse') {
-      badgeClass = img.isCC0 ? 'license-cc0' : 'license-ccby';
-      badgeLabel = img.ovLicLabel;
-    } else {
-      badgeClass = 'license-free';
-      badgeLabel = 'Free';
-    }
-    const gridBadge = `<div class="license-badge ${badgeClass}">${badgeLabel}</div>`;
-    const listBadge = `<span class="list-cc-badge ${badgeClass}">${badgeLabel}</span>`;
-
-    card.innerHTML =
-      `<img class="img-thumb" src="${escHtml(img.thumb)}" alt="${escHtml(img.title)}" loading="lazy">` +
-      gridBadge +
-      `<div class="img-grid-footer">
-        <span class="img-source-badge">${img.source}</span>
-        <span class="img-dims">${img.width && img.height ? img.width + '×' + img.height : ''}</span>
-      </div>` +
-      `<div class="img-list-detail">
-        <div class="list-top">
-          <div class="list-title">${escHtml(img.title)}</div>
-          <span class="list-source-badge">${img.source}</span>
-        </div>
-        <div class="list-attrs">
-          <div class="list-attr"><span class="list-attr-label">By</span><span class="list-attr-val">${photographer}</span></div>
-          <div class="list-attr"><span class="list-attr-label">Dimensions</span><span class="list-attr-val">${dims}</span></div>
-          <div class="list-attr"><span class="list-attr-label">License</span><span class="list-attr-val">${escHtml(img.license)}</span></div>
-        </div>
-        <div class="list-bottom">
-          <span class="list-license-pill">${escHtml(img.licenseNote)}</span>
-          ${listBadge}
-          <a class="list-action" href="${escHtml(dlUrl)}" target="_blank" download onclick="event.stopPropagation()">&#x2193; Download</a>
-          <a class="list-action" href="${escHtml(img.pageUrl)}" target="_blank" onclick="event.stopPropagation()">Source &#x2197;</a>
-        </div>
-      </div>`;
-    grid.appendChild(card);
-  });
+  const visible = freeOnly ? items.filter(img => img.isCC0) : items;
+  visible.forEach(img => grid.appendChild(buildCard(img)));
 
   totalLoaded += items.length;
 }
@@ -619,8 +679,14 @@ function updateUI(batchSize, q) {
   const header = document.getElementById('resultsHeader');
   const stateBox = document.getElementById('stateBox');
 
+  const visibleCount = freeOnly ? allItems.filter(img => img.isCC0).length : totalLoaded;
+
   if (totalLoaded === 0) {
     stateBox.innerHTML = '<div class="big">&#x1F50D;</div><p>No results found for "' + escHtml(q) + '". Try different keywords or enable more sources.</p>';
+    stateBox.style.display = 'block';
+    header.style.display = 'none';
+  } else if (visibleCount === 0) {
+    stateBox.innerHTML = '<div class="big">&#x1F512;</div><p>All ' + totalLoaded + ' results require attribution. Disable the "No attribution" filter or try different keywords.</p>';
     stateBox.style.display = 'block';
     header.style.display = 'none';
   } else {
@@ -633,8 +699,10 @@ function updateUI(batchSize, q) {
     .filter(src => sourceCounts[src] > 0)
     .map(src => src.charAt(0).toUpperCase() + src.slice(1) + ' ' + sourceCounts[src])
     .join(' · ');
-  document.getElementById('resultsCount').innerHTML =
-    '<strong>' + totalLoaded + '</strong> images loaded' + (breakdown ? ' &nbsp;—&nbsp; ' + breakdown : '');
+  const countLabel = freeOnly
+    ? '<strong>' + visibleCount + '</strong> of ' + totalLoaded + ' images (attribution-free only)'
+    : '<strong>' + totalLoaded + '</strong> images loaded';
+  document.getElementById('resultsCount').innerHTML = countLabel + (breakdown ? ' &nbsp;—&nbsp; ' + breakdown : '');
 
   // Manage load-more button (reuse if exists)
   const anyMore = Object.keys(activeSources).some(src => activeSources[src] && !exhausted[src]);
