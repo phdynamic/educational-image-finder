@@ -312,15 +312,22 @@
         </div>
       </div>
 
-      <!-- Free only toggle -->
+      <!-- License filter toggles -->
       <div class="control-group">
         <label>License</label>
         <div class="toggle-wrap">
           <label class="toggle-switch">
-            <input type="checkbox" id="freeOnlyToggle" onchange="toggleFreeOnly()">
+            <input type="checkbox" id="freeOnlyToggle" onchange="setLicenseFilter('free')">
             <span class="toggle-track"></span>
           </label>
           <label class="toggle-label" for="freeOnlyToggle">No attribution</label>
+        </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="attrOnlyToggle" onchange="setLicenseFilter('attribution')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="attrOnlyToggle">Attribution only</label>
         </div>
       </div>
 
@@ -404,7 +411,7 @@ let activeSources = { pexels: true, unsplash: true, pixabay: true, openverse: tr
 let currentModal = null;
 let allItems = [];        // all loaded images for modal navigation
 let viewMode = 'grid';
-let freeOnly = false;     // when true, hide images requiring attribution
+let licenseFilter = 'all'; // 'all', 'free' (no attribution), or 'attribution' (attribution required)
 
 // Pagination state
 let currentQuery = '';
@@ -439,23 +446,39 @@ function setViewMode(mode) {
   else { grid.classList.remove('list-view'); }
 }
 
-// ---- Free-only filter ----
-function toggleFreeOnly() {
-  freeOnly = document.getElementById('freeOnlyToggle').checked;
+// ---- License filter ----
+function applyFilter(items) {
+  if (licenseFilter === 'free') return items.filter(img => img.isCC0);
+  if (licenseFilter === 'attribution') return items.filter(img => !img.isCC0);
+  return items;
+}
+
+function setLicenseFilter(mode) {
+  const freeEl = document.getElementById('freeOnlyToggle');
+  const attrEl = document.getElementById('attrOnlyToggle');
+  if (mode === 'free') {
+    if (freeEl.checked) { licenseFilter = 'free'; attrEl.checked = false; }
+    else { licenseFilter = 'all'; }
+  } else {
+    if (attrEl.checked) { licenseFilter = 'attribution'; freeEl.checked = false; }
+    else { licenseFilter = 'all'; }
+  }
   if (allItems.length > 0) reRender();
 }
 
 function reRender() {
-  const filtered = freeOnly ? allItems.filter(img => img.isCC0) : allItems;
+  const filtered = applyFilter(allItems);
   const grid = document.getElementById('resultsGrid');
   grid.innerHTML = '';
   if (viewMode === 'list') { grid.classList.add('list-view'); } else { grid.classList.remove('list-view'); }
   filtered.forEach(img => grid.appendChild(buildCard(img)));
-  // Update count display
   const header = document.getElementById('resultsHeader');
   const stateBox = document.getElementById('stateBox');
   if (filtered.length === 0 && allItems.length > 0) {
-    stateBox.innerHTML = '<div class="big">&#x1F512;</div><p>All results require attribution. Disable the "No attribution" filter or try different keywords.</p>';
+    const msg = licenseFilter === 'free'
+      ? 'All results require attribution. Disable the "No attribution" filter or try different keywords.'
+      : 'No results require attribution. Disable the "Attribution only" filter or try different keywords.';
+    stateBox.innerHTML = '<div class="big">&#x1F512;</div><p>' + msg + '</p>';
     stateBox.style.display = 'block';
     header.style.display = 'none';
   } else if (filtered.length === 0) {
@@ -469,9 +492,10 @@ function reRender() {
     .filter(src => sourceCounts[src] > 0)
     .map(src => src.charAt(0).toUpperCase() + src.slice(1) + ' ' + sourceCounts[src])
     .join(' · ');
-  const countLabel = freeOnly
-    ? '<strong>' + filtered.length + '</strong> of ' + allItems.length + ' images (attribution-free only)'
-    : '<strong>' + allItems.length + '</strong> images loaded';
+  let countLabel;
+  if (licenseFilter === 'free') countLabel = '<strong>' + filtered.length + '</strong> of ' + allItems.length + ' images (attribution-free only)';
+  else if (licenseFilter === 'attribution') countLabel = '<strong>' + filtered.length + '</strong> of ' + allItems.length + ' images (attribution required only)';
+  else countLabel = '<strong>' + allItems.length + '</strong> images loaded';
   document.getElementById('resultsCount').innerHTML = countLabel + (breakdown ? ' &nbsp;—&nbsp; ' + breakdown : '');
 }
 
@@ -668,7 +692,7 @@ function renderBatch(items, fresh) {
   if (viewMode === 'list') { grid.classList.add('list-view'); } else { grid.classList.remove('list-view'); }
   allItems.push(...items);
 
-  const visible = freeOnly ? items.filter(img => img.isCC0) : items;
+  const visible = applyFilter(items);
   visible.forEach(img => grid.appendChild(buildCard(img)));
 
   totalLoaded += items.length;
@@ -679,14 +703,17 @@ function updateUI(batchSize, q) {
   const header = document.getElementById('resultsHeader');
   const stateBox = document.getElementById('stateBox');
 
-  const visibleCount = freeOnly ? allItems.filter(img => img.isCC0).length : totalLoaded;
+  const visibleCount = applyFilter(allItems).length;
 
   if (totalLoaded === 0) {
     stateBox.innerHTML = '<div class="big">&#x1F50D;</div><p>No results found for "' + escHtml(q) + '". Try different keywords or enable more sources.</p>';
     stateBox.style.display = 'block';
     header.style.display = 'none';
   } else if (visibleCount === 0) {
-    stateBox.innerHTML = '<div class="big">&#x1F512;</div><p>All ' + totalLoaded + ' results require attribution. Disable the "No attribution" filter or try different keywords.</p>';
+    const msg = licenseFilter === 'free'
+      ? 'All ' + totalLoaded + ' results require attribution. Disable the "No attribution" filter or try different keywords.'
+      : 'No results require attribution. Disable the "Attribution only" filter or try different keywords.';
+    stateBox.innerHTML = '<div class="big">&#x1F512;</div><p>' + msg + '</p>';
     stateBox.style.display = 'block';
     header.style.display = 'none';
   } else {
@@ -699,9 +726,10 @@ function updateUI(batchSize, q) {
     .filter(src => sourceCounts[src] > 0)
     .map(src => src.charAt(0).toUpperCase() + src.slice(1) + ' ' + sourceCounts[src])
     .join(' · ');
-  const countLabel = freeOnly
-    ? '<strong>' + visibleCount + '</strong> of ' + totalLoaded + ' images (attribution-free only)'
-    : '<strong>' + totalLoaded + '</strong> images loaded';
+  let countLabel;
+  if (licenseFilter === 'free') countLabel = '<strong>' + visibleCount + '</strong> of ' + totalLoaded + ' images (attribution-free only)';
+  else if (licenseFilter === 'attribution') countLabel = '<strong>' + visibleCount + '</strong> of ' + totalLoaded + ' images (attribution required only)';
+  else countLabel = '<strong>' + totalLoaded + '</strong> images loaded';
   document.getElementById('resultsCount').innerHTML = countLabel + (breakdown ? ' &nbsp;—&nbsp; ' + breakdown : '');
 
   // Manage load-more button (reuse if exists)
