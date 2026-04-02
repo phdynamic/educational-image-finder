@@ -340,10 +340,17 @@
         <label>Size</label>
         <div class="toggle-wrap">
           <label class="toggle-switch">
-            <input type="checkbox" id="xlOnlyToggle" onchange="toggleXlOnly()">
+            <input type="checkbox" id="lgOnlyToggle" onchange="setSizeFilter('large')">
             <span class="toggle-track"></span>
           </label>
-          <label class="toggle-label" for="xlOnlyToggle">Extra large (1000+)</label>
+          <label class="toggle-label" for="lgOnlyToggle">Large (1000+)</label>
+        </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="xlOnlyToggle" onchange="setSizeFilter('xl')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="xlOnlyToggle">Extra large (5000+)</label>
         </div>
       </div>
 
@@ -430,7 +437,7 @@ let currentModal = null;
 let allItems = [];        // all loaded images for modal navigation
 let viewMode = 'grid';
 let licenseFilter = 'all'; // 'all', 'free' (no attribution), or 'attribution' (attribution required)
-let xlOnly = false;        // when true, only show images >= 1000x1000
+let sizeFilter = 'all';    // 'all', 'large' (>=1000), or 'xl' (>=5000)
 
 // Pagination state
 let currentQuery = '';
@@ -471,12 +478,21 @@ function applyFilter(items) {
   let filtered = items;
   if (licenseFilter === 'free') filtered = filtered.filter(img => img.isCC0);
   else if (licenseFilter === 'attribution') filtered = filtered.filter(img => !img.isCC0);
-  if (xlOnly) filtered = filtered.filter(img => img.width >= 1000 && img.height >= 1000);
+  if (sizeFilter === 'large') filtered = filtered.filter(img => img.width >= 1000 && img.height >= 1000);
+  else if (sizeFilter === 'xl') filtered = filtered.filter(img => img.width >= 5000 && img.height >= 5000);
   return filtered;
 }
 
-function toggleXlOnly() {
-  xlOnly = document.getElementById('xlOnlyToggle').checked;
+function setSizeFilter(mode) {
+  const lgEl = document.getElementById('lgOnlyToggle');
+  const xlEl = document.getElementById('xlOnlyToggle');
+  if (mode === 'large') {
+    if (lgEl.checked) { sizeFilter = 'large'; xlEl.checked = false; }
+    else { sizeFilter = 'all'; }
+  } else {
+    if (xlEl.checked) { sizeFilter = 'xl'; lgEl.checked = false; }
+    else { sizeFilter = 'all'; }
+  }
   if (allItems.length > 0) reRender();
 }
 
