@@ -335,6 +335,18 @@
         </div>
       </div>
 
+      <!-- Size filter -->
+      <div class="control-group">
+        <label>Size</label>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="xlOnlyToggle" onchange="toggleXlOnly()">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="xlOnlyToggle">Extra large (1000+)</label>
+        </div>
+      </div>
+
       <!-- View -->
       <div class="control-group" style="margin-left:auto;">
         <label>View</label>
@@ -418,6 +430,7 @@ let currentModal = null;
 let allItems = [];        // all loaded images for modal navigation
 let viewMode = 'grid';
 let licenseFilter = 'all'; // 'all', 'free' (no attribution), or 'attribution' (attribution required)
+let xlOnly = false;        // when true, only show images >= 1000x1000
 
 // Pagination state
 let currentQuery = '';
@@ -453,11 +466,18 @@ function setViewMode(mode) {
   else { grid.classList.remove('list-view'); }
 }
 
-// ---- License filter ----
+// ---- Filters ----
 function applyFilter(items) {
-  if (licenseFilter === 'free') return items.filter(img => img.isCC0);
-  if (licenseFilter === 'attribution') return items.filter(img => !img.isCC0);
-  return items;
+  let filtered = items;
+  if (licenseFilter === 'free') filtered = filtered.filter(img => img.isCC0);
+  else if (licenseFilter === 'attribution') filtered = filtered.filter(img => !img.isCC0);
+  if (xlOnly) filtered = filtered.filter(img => img.width >= 1000 && img.height >= 1000);
+  return filtered;
+}
+
+function toggleXlOnly() {
+  xlOnly = document.getElementById('xlOnlyToggle').checked;
+  if (allItems.length > 0) reRender();
 }
 
 function setLicenseFilter(mode) {
