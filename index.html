@@ -84,6 +84,11 @@
   .dot-unsplash { background: #888; }
   .dot-pixabay { background: #2ec66d; }
   .dot-openverse { background: #e5a423; }
+  .dot-wikimedia { background: #069; }
+  .dot-nasa { background: #fc3d21; }
+  .dot-loc { background: #c9a96e; }
+  .dot-flickr { background: #ff0084; }
+  .dot-smithsonian { background: #d4a84b; }
 
   /* Free-only toggle */
   .toggle-wrap { display: flex; align-items: center; gap: 8px; }
@@ -309,6 +314,11 @@
           <button class="chip active" id="chip-unsplash" onclick="toggleChip('unsplash')"><span class="dot dot-unsplash"></span>Unsplash</button>
           <button class="chip active" id="chip-pixabay" onclick="toggleChip('pixabay')"><span class="dot dot-pixabay"></span>Pixabay</button>
           <button class="chip active" id="chip-openverse" onclick="toggleChip('openverse')"><span class="dot dot-openverse"></span>Openverse</button>
+          <button class="chip active" id="chip-wikimedia" onclick="toggleChip('wikimedia')"><span class="dot dot-wikimedia"></span>Wikimedia</button>
+          <button class="chip active" id="chip-nasa" onclick="toggleChip('nasa')"><span class="dot dot-nasa"></span>NASA</button>
+          <button class="chip active" id="chip-loc" onclick="toggleChip('loc')"><span class="dot dot-loc"></span>Library of Congress</button>
+          <button class="chip active" id="chip-flickr" onclick="toggleChip('flickr')"><span class="dot dot-flickr"></span>Flickr</button>
+          <button class="chip active" id="chip-smithsonian" onclick="toggleChip('smithsonian')"><span class="dot dot-smithsonian"></span>Smithsonian</button>
         </div>
       </div>
 
@@ -406,7 +416,9 @@
 
 <script>
 // ---- State ----
-let activeSources = { pexels: true, unsplash: true, pixabay: true, openverse: true };
+const ALL_SOURCES = ['pexels','unsplash','pixabay','openverse','wikimedia','nasa','loc','flickr','smithsonian'];
+const SOURCE_LABELS = { pexels:'Pexels', unsplash:'Unsplash', pixabay:'Pixabay', openverse:'Openverse', wikimedia:'Wikimedia', nasa:'NASA', loc:'LOC', flickr:'Flickr', smithsonian:'Smithsonian' };
+let activeSources = Object.fromEntries(ALL_SOURCES.map(s => [s, true]));
 
 let currentModal = null;
 let allItems = [];        // all loaded images for modal navigation
@@ -420,15 +432,17 @@ let exhausted = {};       // per-source: true when no more pages
 let totalLoaded = 0;
 let sourceCounts = {};    // per-source loaded count
 let isSearching = false;  // prevents duplicate searches
-const PER_SOURCE = 13;    // ~13 × 4 sources = ~52 per load
+const PER_SOURCE = 8;     // ~8 × 9 sources = ~72 per load
 
 // ---- API Keys (hardcoded) ----
 // SECURITY NOTE: These keys are visible to anyone who views page source.
 // For a production deployment, route requests through a server-side proxy
 // that holds the keys and enforces rate limits / auth.
-const KEY_PEXELS   = '1DQboNmA7nYSIxexbVctwCz6CrXEMEudhlCW5GxCw8C5tJfA1wf3DkKX';
-const KEY_UNSPLASH = 'dtzOYQ0iqydb5FdzbmJl72p2bW5l80QgyAHQkzNU8BY';
-const KEY_PIXABAY  = '18017390-57da3d02482166a97cd417d7d';
+const KEY_PEXELS      = '1DQboNmA7nYSIxexbVctwCz6CrXEMEudhlCW5GxCw8C5tJfA1wf3DkKX';
+const KEY_UNSPLASH    = 'dtzOYQ0iqydb5FdzbmJl72p2bW5l80QgyAHQkzNU8BY';
+const KEY_PIXABAY     = '18017390-57da3d02482166a97cd417d7d';
+const KEY_FLICKR      = '630318ab0ed51e23f4da2bcbf3cf0b16';
+const KEY_SMITHSONIAN = 'bfXFOedC8aalXEPRpGOYGGkd2RYriFhEG0bC8rIn';
 
 // ---- Source toggles ----
 function toggleChip(src) {
@@ -490,7 +504,7 @@ function reRender() {
   }
   const breakdown = Object.keys(sourceCounts)
     .filter(src => sourceCounts[src] > 0)
-    .map(src => src.charAt(0).toUpperCase() + src.slice(1) + ' ' + sourceCounts[src])
+    .map(src => (SOURCE_LABELS[src] || src) + ' ' + sourceCounts[src])
     .join(' · ');
   let countLabel;
   if (licenseFilter === 'free') countLabel = '<strong>' + filtered.length + '</strong> of ' + allItems.length + ' images (attribution-free only)';
@@ -509,9 +523,9 @@ async function doSearch() {
   // Reset pagination
   isSearching = true;
   currentQuery = q;
-  pageState = { pexels: 1, unsplash: 1, pixabay: 1, openverse: 1 };
-  exhausted = { pexels: false, unsplash: false, pixabay: false, openverse: false };
-  sourceCounts = { pexels: 0, unsplash: 0, pixabay: 0, openverse: 0 };
+  pageState = Object.fromEntries(ALL_SOURCES.map(s => [s, 1]));
+  exhausted = Object.fromEntries(ALL_SOURCES.map(s => [s, false]));
+  sourceCounts = Object.fromEntries(ALL_SOURCES.map(s => [s, 0]));
   totalLoaded = 0;
 
   showLoading();
@@ -547,13 +561,19 @@ function shuffle(arr) {
   return arr;
 }
 
+// ---- Source-to-fetcher map ----
+const FETCHERS = {
+  pexels: fetchPexels, unsplash: fetchUnsplash, pixabay: fetchPixabay,
+  openverse: fetchOpenverse, wikimedia: fetchWikimedia, nasa: fetchNasa,
+  loc: fetchLoc, flickr: fetchFlickr, smithsonian: fetchSmithsonian,
+};
+
 // ---- Fetch one page across active sources ----
 async function fetchPage(q) {
   const promises = [];
-  if (activeSources.pexels    && !exhausted.pexels)     promises.push(fetchPexels(q,     pageState.pexels));
-  if (activeSources.unsplash  && !exhausted.unsplash)   promises.push(fetchUnsplash(q,   pageState.unsplash));
-  if (activeSources.pixabay   && !exhausted.pixabay)    promises.push(fetchPixabay(q,    pageState.pixabay));
-  if (activeSources.openverse && !exhausted.openverse)  promises.push(fetchOpenverse(q,  pageState.openverse));
+  ALL_SOURCES.forEach(src => {
+    if (activeSources[src] && !exhausted[src]) promises.push(FETCHERS[src](q, pageState[src]));
+  });
 
   const results = await Promise.allSettled(promises);
   const all = [], errors = [];
@@ -640,6 +660,151 @@ async function fetchOpenverse(q, page) {
   return { source: 'openverse', items };
 }
 
+async function fetchWikimedia(q, page) {
+  const offset = (page - 1) * PER_SOURCE;
+  const res = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(q)}&gsrlimit=${PER_SOURCE}&gsroffset=${offset}&prop=imageinfo&iiprop=url|extmetadata|size|mime&iiurlwidth=400&format=json&origin=*`);
+  if (!res.ok) throw new Error('Wikimedia: ' + res.status);
+  const data = await res.json();
+  const pages = data.query?.pages || {};
+  const items = Object.values(pages).filter(p => {
+    const mime = p.imageinfo?.[0]?.mime || '';
+    return mime.startsWith('image/');
+  }).map(p => {
+    const info = p.imageinfo[0];
+    const meta = info.extmetadata || {};
+    const licShort = (meta.LicenseShortName?.value || '').toLowerCase();
+    const isCC0 = licShort.includes('cc0') || licShort.includes('public domain') || licShort === 'pd';
+    const licLabel = meta.LicenseShortName?.value || 'Wikimedia License';
+    // Strip HTML tags from artist field
+    const artist = (meta.Artist?.value || 'Unknown').replace(/<[^>]*>/g, '');
+    return {
+      id: 'wm_' + p.pageid, source: 'Wikimedia',
+      title: (meta.ImageDescription?.value || p.title.replace('File:', '')).replace(/<[^>]*>/g, ''),
+      photographer: artist,
+      thumb: info.thumburl || info.url,
+      srcSet: { small: info.thumburl || info.url, medium: info.thumburl || info.url, large: info.url, original: info.url },
+      width: info.width || null, height: info.height || null,
+      pageUrl: info.descriptionurl,
+      license: licLabel, licenseNote: isCC0 ? 'Public domain / CC0 — Free to use without attribution.' : licLabel + ' — Attribution may be required.',
+      isCC0,
+    };
+  });
+  if (!data.continue) exhausted.wikimedia = true;
+  return { source: 'wikimedia', items };
+}
+
+async function fetchNasa(q, page) {
+  const res = await fetch(`https://images-api.nasa.gov/search?q=${encodeURIComponent(q)}&media_type=image&page=${page}&page_size=${PER_SOURCE}`);
+  if (!res.ok) throw new Error('NASA: ' + res.status);
+  const data = await res.json();
+  const collection = data.collection || {};
+  const items = (collection.items || []).filter(item => item.links?.length > 0).map(item => {
+    const d = item.data[0];
+    const thumb = item.links[0].href;
+    const nasaId = d.nasa_id;
+    return {
+      id: 'nasa_' + nasaId, source: 'NASA',
+      title: d.title || 'NASA image', photographer: d.photographer || d.center || 'NASA',
+      thumb: thumb,
+      srcSet: { small: thumb, medium: thumb, large: thumb, original: thumb },
+      width: null, height: null,
+      pageUrl: `https://images.nasa.gov/details/${nasaId}`,
+      license: 'Public Domain', licenseNote: 'NASA public domain — Free to use. Courtesy credit to NASA appreciated.',
+      isCC0: true,
+    };
+  });
+  const hasNext = (collection.links || []).some(l => l.rel === 'next');
+  if (!hasNext) exhausted.nasa = true;
+  return { source: 'nasa', items };
+}
+
+async function fetchLoc(q, page) {
+  const res = await fetch(`https://www.loc.gov/search/?q=${encodeURIComponent(q)}&fa=online-format:image&fo=json&sp=${page}&c=${PER_SOURCE}`);
+  if (!res.ok) throw new Error('LOC: ' + res.status);
+  const data = await res.json();
+  const items = (data.results || []).filter(r => r.image_url?.length > 0).map(r => {
+    const images = r.image_url;
+    const thumb = images[0].startsWith('//') ? 'https:' + images[0] : images[0];
+    const full = images[images.length - 1].startsWith('//') ? 'https:' + images[images.length - 1] : images[images.length - 1];
+    const creator = Array.isArray(r.contributor) ? r.contributor[0] : (Array.isArray(r.creator) ? r.creator[0] : 'Unknown');
+    return {
+      id: 'loc_' + (r.id || Math.random()).toString().replace(/\W/g, ''), source: 'LOC',
+      title: r.title || 'Library of Congress image', photographer: creator,
+      thumb: thumb,
+      srcSet: { small: thumb, medium: thumb, large: full, original: full },
+      width: null, height: null,
+      pageUrl: r.url || r.id,
+      license: 'No known restrictions', licenseNote: 'Library of Congress — Generally free to use. No known copyright restrictions.',
+      isCC0: true,
+    };
+  });
+  const pagination = data.pagination || {};
+  if (!pagination.next) exhausted.loc = true;
+  return { source: 'loc', items };
+}
+
+const FLICKR_LICENSE_MAP = {
+  '1': 'CC BY-NC-SA 2.0', '2': 'CC BY-NC 2.0', '3': 'CC BY-NC-ND 2.0',
+  '4': 'CC BY 2.0', '5': 'CC BY-SA 2.0', '6': 'CC BY-ND 2.0',
+  '9': 'CC0 1.0', '10': 'Public Domain Mark',
+};
+
+async function fetchFlickr(q, page) {
+  const res = await fetch(`https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=${KEY_FLICKR}&text=${encodeURIComponent(q)}&license=1,2,3,4,5,6,9,10&safe_search=1&content_type=1&extras=url_m,url_l,url_o,owner_name,license,o_dims&per_page=${PER_SOURCE}&page=${page}&format=json&nojsoncallback=1`);
+  if (!res.ok) throw new Error('Flickr: ' + res.status);
+  const data = await res.json();
+  if (data.stat !== 'ok') throw new Error('Flickr: ' + (data.message || 'error'));
+  const photos = data.photos || {};
+  const items = (photos.photo || []).map(p => {
+    const isCC0 = p.license === '9' || p.license === '10';
+    const licLabel = FLICKR_LICENSE_MAP[p.license] || 'CC License';
+    const thumb = p.url_m || `https://live.staticflickr.com/${p.server}/${p.id}_${p.secret}.jpg`;
+    const full = p.url_o || p.url_l || `https://live.staticflickr.com/${p.server}/${p.id}_${p.secret}_b.jpg`;
+    return {
+      id: 'fl_' + p.id, source: 'Flickr',
+      title: p.title || 'Flickr photo', photographer: p.ownername || 'Unknown',
+      thumb: thumb,
+      srcSet: { small: thumb, medium: thumb, large: full, original: full },
+      width: parseInt(p.o_width) || null, height: parseInt(p.o_height) || null,
+      pageUrl: `https://www.flickr.com/photos/${p.owner}/${p.id}`,
+      license: licLabel, licenseNote: isCC0 ? 'CC0 / Public Domain — Free to use without attribution.' : licLabel + ' — Attribution to the creator is required.',
+      isCC0,
+    };
+  });
+  if (photos.page >= photos.pages) exhausted.flickr = true;
+  return { source: 'flickr', items };
+}
+
+async function fetchSmithsonian(q, page) {
+  const offset = (page - 1) * PER_SOURCE;
+  const res = await fetch(`https://api.si.edu/openaccess/api/v1.0/search?q=${encodeURIComponent(q)}&images_only=true&rows=${PER_SOURCE}&start=${offset}&api_key=${KEY_SMITHSONIAN}`);
+  if (!res.ok) throw new Error('Smithsonian: ' + res.status);
+  const data = await res.json();
+  const response = data.response || {};
+  const items = (response.rows || []).filter(row => {
+    const media = row.content?.descriptiveNonRepeating?.online_media?.media;
+    return media?.length > 0 && media[0].thumbnail;
+  }).map(row => {
+    const desc = row.content?.descriptiveNonRepeating || {};
+    const media = desc.online_media.media[0];
+    const freetext = row.content?.freetext || {};
+    const creatorEntry = (freetext.name || []).find(n => n.label === 'Creator' || n.label === 'Artist');
+    return {
+      id: 'si_' + row.id, source: 'Smithsonian',
+      title: desc.title?.content || row.title || 'Smithsonian item',
+      photographer: creatorEntry?.content || 'Smithsonian Institution',
+      thumb: media.thumbnail,
+      srcSet: { small: media.thumbnail, medium: media.content || media.thumbnail, large: media.content || media.thumbnail, original: media.content || media.thumbnail },
+      width: null, height: null,
+      pageUrl: desc.record_link || desc.guid || `https://www.si.edu/object/${row.id}`,
+      license: 'CC0', licenseNote: 'Smithsonian Open Access — CC0, free to use without attribution.',
+      isCC0: true,
+    };
+  });
+  if (offset + PER_SOURCE >= (response.rowCount || 0)) exhausted.smithsonian = true;
+  return { source: 'smithsonian', items };
+}
+
 // ---- Build a single image card element ----
 function buildCard(img) {
   const card = document.createElement('div');
@@ -650,12 +815,12 @@ function buildCard(img) {
   const photographer = img.photographer ? escHtml(img.photographer) : 'Unknown';
   const dlUrl = img.srcSet.original || '';
   let badgeClass, badgeLabel;
-  if (img.source === 'Openverse') {
-    badgeClass = img.isCC0 ? 'license-cc0' : 'license-ccby';
-    badgeLabel = img.ovLicLabel;
-  } else {
+  if (img.isCC0) {
     badgeClass = 'license-free';
     badgeLabel = 'Free';
+  } else {
+    badgeClass = 'license-ccby';
+    badgeLabel = 'Attr';
   }
 
   card.innerHTML =
@@ -724,7 +889,7 @@ function updateUI(batchSize, q) {
   // Build per-source breakdown
   const breakdown = Object.keys(sourceCounts)
     .filter(src => sourceCounts[src] > 0)
-    .map(src => src.charAt(0).toUpperCase() + src.slice(1) + ' ' + sourceCounts[src])
+    .map(src => (SOURCE_LABELS[src] || src) + ' ' + sourceCounts[src])
     .join(' · ');
   let countLabel;
   if (licenseFilter === 'free') countLabel = '<strong>' + visibleCount + '</strong> of ' + totalLoaded + ' images (attribution-free only)';
