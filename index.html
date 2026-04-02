@@ -354,6 +354,25 @@
         </div>
       </div>
 
+      <!-- Color filter -->
+      <div class="control-group">
+        <label>Color <span style="font-size:9px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--text3);">(set before searching)</span></label>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="colorToggle" onchange="setColorFilter('color')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="colorToggle">Color</label>
+        </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="bwToggle" onchange="setColorFilter('bw')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="bwToggle">Black &amp; white</label>
+        </div>
+      </div>
+
       <!-- View -->
       <div class="control-group" style="margin-left:auto;">
         <label>View</label>
@@ -438,6 +457,7 @@ let allItems = [];        // all loaded images for modal navigation
 let viewMode = 'grid';
 let licenseFilter = 'all'; // 'all', 'free' (no attribution), or 'attribution' (attribution required)
 let sizeFilter = 'all';    // 'all', 'large' (>=1000), or 'xl' (>=5000)
+let colorFilter = 'all';  // 'all', 'color', or 'bw' — applied at search time, not client-side
 
 // Pagination state
 let currentQuery = '';
@@ -494,6 +514,18 @@ function setSizeFilter(mode) {
     else { sizeFilter = 'all'; }
   }
   if (allItems.length > 0) reRender();
+}
+
+function setColorFilter(mode) {
+  const colorEl = document.getElementById('colorToggle');
+  const bwEl = document.getElementById('bwToggle');
+  if (mode === 'color') {
+    if (colorEl.checked) { colorFilter = 'color'; bwEl.checked = false; }
+    else { colorFilter = 'all'; }
+  } else {
+    if (bwEl.checked) { colorFilter = 'bw'; colorEl.checked = false; }
+    else { colorFilter = 'all'; }
+  }
 }
 
 function setLicenseFilter(mode) {
@@ -641,7 +673,9 @@ async function fetchPexels(q, page) {
 }
 
 async function fetchUnsplash(q, page) {
-  const res = await fetch(`https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}&content_filter=high&client_id=${KEY_UNSPLASH}`);
+  let url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}&content_filter=high&client_id=${KEY_UNSPLASH}`;
+  if (colorFilter === 'bw') url += '&color=black_and_white';
+  const res = await fetch(url);
   if (!res.ok) throw new Error('Unsplash: ' + res.status);
   const data = await res.json();
   const items = (data.results || []).map(p => ({
@@ -656,7 +690,10 @@ async function fetchUnsplash(q, page) {
 }
 
 async function fetchPixabay(q, page) {
-  const res = await fetch(`https://pixabay.com/api/?key=${KEY_PIXABAY}&q=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}&safesearch=true`);
+  let url = `https://pixabay.com/api/?key=${KEY_PIXABAY}&q=${encodeURIComponent(q)}&per_page=${PER_SOURCE}&page=${page}&safesearch=true`;
+  if (colorFilter === 'bw') url += '&colors=grayscale';
+  else if (colorFilter === 'color') url += '&colors=red,orange,yellow,green,turquoise,blue,pink,white';
+  const res = await fetch(url);
   if (!res.ok) throw new Error('Pixabay: ' + res.status);
   const data = await res.json();
   const items = (data.hits || []).map(p => ({
