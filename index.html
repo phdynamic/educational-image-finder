@@ -402,6 +402,13 @@
           </label>
           <label class="toggle-label" for="illustrationToggle">Illustration</label>
         </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="iconToggle" onchange="setTypeFilter('icon')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="iconToggle">Icon</label>
+        </div>
       </div>
     </div>
   </div>
@@ -497,7 +504,7 @@ let viewMode = 'grid';
 let licenseFilter = 'all'; // 'all', 'free' (no attribution), or 'attribution' (attribution required)
 let sizeFilter = 'all';    // 'all', 'large' (>=1000), or 'xl' (>=5000)
 let orientationFilter = 'all'; // 'all', 'landscape', or 'portrait'
-let typeFilter = 'all';    // 'all', 'photo', or 'illustration'
+let typeFilter = 'all';    // 'all', 'photo', 'illustration', or 'icon'
 
 // Pagination state
 let currentQuery = '';
@@ -544,8 +551,7 @@ function applyFilter(items) {
   else if (sizeFilter === 'xl') filtered = filtered.filter(img => img.width >= 5000 && img.height >= 5000);
   if (orientationFilter === 'landscape') filtered = filtered.filter(img => img.width && img.height && img.width > img.height);
   else if (orientationFilter === 'portrait') filtered = filtered.filter(img => img.width && img.height && img.height > img.width);
-  if (typeFilter === 'photo') filtered = filtered.filter(img => img.mediaType === 'photo');
-  else if (typeFilter === 'illustration') filtered = filtered.filter(img => img.mediaType === 'illustration');
+  if (typeFilter !== 'all') filtered = filtered.filter(img => img.mediaType === typeFilter);
   return filtered;
 }
 
@@ -591,12 +597,13 @@ function setOrientationFilter(mode) {
 function setTypeFilter(mode) {
   const phEl = document.getElementById('photoToggle');
   const ilEl = document.getElementById('illustrationToggle');
-  if (mode === 'photo') {
-    if (phEl.checked) { typeFilter = 'photo'; ilEl.checked = false; }
-    else { typeFilter = 'all'; }
+  const icEl = document.getElementById('iconToggle');
+  const el = mode === 'photo' ? phEl : mode === 'illustration' ? ilEl : icEl;
+  if (el.checked) {
+    typeFilter = mode;
+    [phEl, ilEl, icEl].forEach(e => { if (e !== el) e.checked = false; });
   } else {
-    if (ilEl.checked) { typeFilter = 'illustration'; phEl.checked = false; }
-    else { typeFilter = 'all'; }
+    typeFilter = 'all';
   }
   if (allItems.length > 0) reRender();
 }
@@ -866,7 +873,7 @@ async function fetchIconify(q, page) {
       width: null, height: null,
       pageUrl: `https://icon-sets.iconify.design/${prefix}/${name}/`,
       license: 'Open Source', licenseNote: 'Open source icon — Free to use. Check icon set license for details.',
-      isCC0: true, mediaType: 'illustration',
+      isCC0: true, mediaType: 'icon',
     };
   });
   if (offset + PER_SOURCE >= (data.total || 0)) exhausted.iconify = true;
