@@ -30,6 +30,7 @@
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { overflow-y: scroll; }
 
   body {
     background: var(--bg);
@@ -84,6 +85,9 @@
   .dot-unsplash { background: #888; }
   .dot-pixabay { background: #2ec66d; }
   .dot-openverse { background: #e5a423; }
+  .dot-wikimedia { background: #069; }
+  .dot-nasa { background: #fc3d21; }
+  .dot-iconify { background: #1769aa; }
 
   /* Free-only toggle */
   .toggle-wrap { display: flex; align-items: center; gap: 8px; }
@@ -111,7 +115,7 @@
   /* ---- GRID VIEW ---- */
   #resultsGrid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
   }
 
@@ -129,6 +133,7 @@
 
   /* Grid thumbnail */
   .img-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: var(--bg3); }
+  .img-card.icon-card .img-thumb { background: #fff; object-fit: contain; padding: 16px; }
 
   /* Grid footer bar */
   .img-grid-footer { padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; }
@@ -143,6 +148,15 @@
 
   /* List detail — hidden in grid mode */
   .img-list-detail { display: none; }
+
+  /* ---- COMPACT VIEW ---- */
+  #resultsGrid.compact-view {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+  }
+  #resultsGrid.compact-view .img-thumb { aspect-ratio: 1/1; }
+  #resultsGrid.compact-view .img-grid-footer { display: none; }
+  #resultsGrid.compact-view .license-badge { font-size: 8px; padding: 1px 5px; top: 4px; right: 4px; }
 
   /* ---- LIST VIEW ---- */
   #resultsGrid.list-view {
@@ -215,10 +229,10 @@
   /* ---- Modal ---- */
   .modal-overlay { position: fixed; inset: 0; background: rgba(8,6,16,0.85); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
   .modal-overlay.open { opacity: 1; pointer-events: all; }
-  .modal { position: relative; background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; max-width: 860px; width: 100%; max-height: 90vh; overflow-y: auto; display: grid; grid-template-columns: 1fr 1fr; transform: scale(0.96); transition: transform 0.2s; }
+  .modal { position: relative; background: var(--bg2); border: 1px solid var(--border2); border-radius: 16px; max-width: 1100px; width: 100%; max-height: 92vh; overflow-y: auto; display: grid; grid-template-columns: 3fr 2fr; transform: scale(0.96); transition: transform 0.2s; }
   .modal-overlay.open .modal { transform: scale(1); }
-  .modal-img-pane { background: var(--bg3); border-radius: 16px 0 0 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 320px; }
-  .modal-img-pane img { width: 100%; height: 100%; object-fit: cover; display: block; transition: opacity 0.2s; }
+  .modal-img-pane { background: var(--bg3); border-radius: 16px 0 0 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; min-height: 420px; }
+  .modal-img-pane img { width: 100%; height: 100%; object-fit: contain; display: block; transition: opacity 0.2s; }
   .modal-info-pane { padding: 28px 28px 24px; display: flex; flex-direction: column; gap: 20px; }
   .modal-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .modal-source-tag { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--purple2); background: var(--tag-bg); padding: 4px 10px; border-radius: 6px; }
@@ -241,7 +255,8 @@
   .btn-copy { background: var(--surface2); border: 1px solid var(--border2); color: var(--purple2); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; padding: 8px 14px; border-radius: var(--radius2); cursor: pointer; transition: background 0.15s; white-space: nowrap; }
   .btn-copy:hover { background: var(--tag-bg); }
   .btn-copy.copied { color: var(--success); }
-  .btn-download { width: 100%; background: var(--purple3); border: 1px solid var(--purple); color: var(--accent); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; padding: 13px; border-radius: var(--radius2); cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+  .btn-download { width: 100%; background: var(--purple3); border: 1px solid var(--purple); color: var(--accent); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; padding: 13px; border-radius: var(--radius2); cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-download:disabled { opacity: 0.6; cursor: default; }
   .btn-download:hover { background: rgba(124,92,191,0.85); }
   .btn-open { width: 100%; background: transparent; border: 1px solid var(--border2); color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 10px; border-radius: var(--radius2); cursor: pointer; transition: border-color 0.15s, color 0.15s; text-align: center; text-decoration: none; display: block; }
   .btn-open:hover { border-color: var(--purple3); color: var(--purple2); }
@@ -274,6 +289,7 @@
     .modal { grid-template-columns: 1fr; }
     .modal-img-pane { border-radius: 16px 16px 0 0; min-height: 200px; }
     #resultsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    #resultsGrid.compact-view { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .modal-nav.prev { left: 8px; }
     .modal-nav.next { right: 8px; }
   }
@@ -284,7 +300,7 @@
 
   <header>
     <div class="logo">Lumi<span>nary</span></div>
-    <div class="tagline">Free-to-use images for education — most require no attribution</div>
+    <div class="tagline">Free-to-use images for education</div>
   </header>
 
   <!-- Search Panel -->
@@ -309,40 +325,99 @@
           <button class="chip active" id="chip-unsplash" onclick="toggleChip('unsplash')"><span class="dot dot-unsplash"></span>Unsplash</button>
           <button class="chip active" id="chip-pixabay" onclick="toggleChip('pixabay')"><span class="dot dot-pixabay"></span>Pixabay</button>
           <button class="chip active" id="chip-openverse" onclick="toggleChip('openverse')"><span class="dot dot-openverse"></span>Openverse</button>
+          <button class="chip active" id="chip-wikimedia" onclick="toggleChip('wikimedia')"><span class="dot dot-wikimedia"></span>Wikimedia</button>
+          <button class="chip active" id="chip-nasa" onclick="toggleChip('nasa')"><span class="dot dot-nasa"></span>NASA</button>
+          <button class="chip active" id="chip-iconify" onclick="toggleChip('iconify')"><span class="dot dot-iconify"></span>Iconify</button>
         </div>
       </div>
 
-      <!-- Free only toggle -->
+      <!-- License filter toggles -->
       <div class="control-group">
         <label>License</label>
         <div class="toggle-wrap">
           <label class="toggle-switch">
-            <input type="checkbox" id="freeOnlyToggle" onchange="toggleFreeOnly()">
+            <input type="checkbox" id="freeOnlyToggle" onchange="setLicenseFilter('free')">
             <span class="toggle-track"></span>
           </label>
           <label class="toggle-label" for="freeOnlyToggle">No attribution</label>
         </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="attrOnlyToggle" onchange="setLicenseFilter('attribution')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="attrOnlyToggle">Attribution only</label>
+        </div>
       </div>
 
-      <!-- View -->
-      <div class="control-group" style="margin-left:auto;">
-        <label>View</label>
-        <div class="view-toggle">
-          <button class="view-btn active" id="btn-grid" onclick="setViewMode('grid')" title="Grid view">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <rect x="1" y="1" width="6" height="6" rx="1"/>
-              <rect x="9" y="1" width="6" height="6" rx="1"/>
-              <rect x="1" y="9" width="6" height="6" rx="1"/>
-              <rect x="9" y="9" width="6" height="6" rx="1"/>
-            </svg>
-          </button>
-          <button class="view-btn" id="btn-list" onclick="setViewMode('list')" title="List view">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <rect x="1" y="2" width="14" height="2.5" rx="1"/>
-              <rect x="1" y="6.75" width="14" height="2.5" rx="1"/>
-              <rect x="1" y="11.5" width="14" height="2.5" rx="1"/>
-            </svg>
-          </button>
+      <!-- Size filter -->
+      <div class="control-group">
+        <label>Size</label>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="lgOnlyToggle" onchange="setSizeFilter('large')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="lgOnlyToggle">Large (1000+)</label>
+        </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="xlOnlyToggle" onchange="setSizeFilter('xl')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="xlOnlyToggle">Extra large (5000+)</label>
+        </div>
+      </div>
+
+      <!-- Orientation filter -->
+      <div class="control-group">
+        <label>Orientation</label>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="landscapeToggle" onchange="setOrientationFilter('landscape')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="landscapeToggle">Landscape</label>
+        </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="portraitToggle" onchange="setOrientationFilter('portrait')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="portraitToggle">Portrait</label>
+        </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="squareToggle" onchange="setOrientationFilter('square')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="squareToggle">Square</label>
+        </div>
+      </div>
+
+      <!-- Type filter -->
+      <div class="control-group">
+        <label>Type</label>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="photoToggle" onchange="setTypeFilter('photo')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="photoToggle">Photo</label>
+        </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="illustrationToggle" onchange="setTypeFilter('illustration')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="illustrationToggle">Illustration</label>
+        </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="iconToggle" onchange="setTypeFilter('icon')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="iconToggle">Icon</label>
         </div>
       </div>
     </div>
@@ -354,6 +429,36 @@
   <!-- Results header -->
   <div class="results-header" id="resultsHeader" style="display:none;">
     <div class="results-count" id="resultsCount"></div>
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-grid" onclick="setViewMode('grid')" title="Grid view">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <rect x="1" y="1" width="6" height="6" rx="1"/>
+          <rect x="9" y="1" width="6" height="6" rx="1"/>
+          <rect x="1" y="9" width="6" height="6" rx="1"/>
+          <rect x="9" y="9" width="6" height="6" rx="1"/>
+        </svg>
+      </button>
+      <button class="view-btn" id="btn-compact" onclick="setViewMode('compact')" title="Compact view">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <rect x="1" y="1" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="6.25" y="1" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="11.5" y="1" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="1" y="6.25" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="6.25" y="6.25" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="11.5" y="6.25" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="1" y="11.5" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="6.25" y="11.5" width="3.5" height="3.5" rx="0.5"/>
+          <rect x="11.5" y="11.5" width="3.5" height="3.5" rx="0.5"/>
+        </svg>
+      </button>
+      <button class="view-btn" id="btn-list" onclick="setViewMode('list')" title="List view">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <rect x="1" y="2" width="14" height="2.5" rx="1"/>
+          <rect x="1" y="6.75" width="14" height="2.5" rx="1"/>
+          <rect x="1" y="11.5" width="14" height="2.5" rx="1"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
   <!-- Results -->
@@ -390,8 +495,7 @@
         </div>
       </div>
       <div class="btn-row">
-        <a class="btn-download" id="modalDownload" href="#" target="_blank" download>&#x2193; Download Image</a>
-        <button class="btn-download" id="stashlyBtn" onclick="sendToStashly()" style="background:rgba(230,57,70,0.3);border-color:rgba(230,57,70,0.5);color:#e63946;">&#x2197; Send to Stashly</button>
+        <button class="btn-download" id="modalDownload" onclick="downloadImage()">&#x2193; Download Image</button>
         <a class="btn-open" id="modalOpen" href="#" target="_blank">Open source page</a>
       </div>
     </div>
@@ -400,12 +504,17 @@
 
 <script>
 // ---- State ----
-let activeSources = { pexels: true, unsplash: true, pixabay: true, openverse: true };
+const ALL_SOURCES = ['pexels','unsplash','pixabay','openverse','wikimedia','nasa','iconify'];
+const SOURCE_LABELS = { pexels:'Pexels', unsplash:'Unsplash', pixabay:'Pixabay', openverse:'Openverse', wikimedia:'Wikimedia', nasa:'NASA', iconify:'Iconify' };
+let activeSources = Object.fromEntries(ALL_SOURCES.map(s => [s, true]));
 
 let currentModal = null;
 let allItems = [];        // all loaded images for modal navigation
 let viewMode = 'grid';
-let freeOnly = false;     // when true, hide images requiring attribution
+let licenseFilter = 'all'; // 'all', 'free' (no attribution), or 'attribution' (attribution required)
+let sizeFilter = 'all';    // 'all', 'large' (>=1000), or 'xl' (>=5000)
+let orientationFilter = 'all'; // 'all', 'landscape', 'portrait', or 'square'
+let typeFilter = 'all';    // 'all', 'photo', 'illustration', or 'icon'
 
 // Pagination state
 let currentQuery = '';
@@ -414,15 +523,16 @@ let exhausted = {};       // per-source: true when no more pages
 let totalLoaded = 0;
 let sourceCounts = {};    // per-source loaded count
 let isSearching = false;  // prevents duplicate searches
-const PER_SOURCE = 13;    // ~13 × 4 sources = ~52 per load
+const PER_SOURCE = 10;    // ~10 × 7 sources = ~70 per load
+const MIN_DIM = 500;      // exclude images smaller than 500×500 (when dimensions known)
 
 // ---- API Keys (hardcoded) ----
 // SECURITY NOTE: These keys are visible to anyone who views page source.
 // For a production deployment, route requests through a server-side proxy
 // that holds the keys and enforces rate limits / auth.
-const KEY_PEXELS   = '1DQboNmA7nYSIxexbVctwCz6CrXEMEudhlCW5GxCw8C5tJfA1wf3DkKX';
-const KEY_UNSPLASH = 'dtzOYQ0iqydb5FdzbmJl72p2bW5l80QgyAHQkzNU8BY';
-const KEY_PIXABAY  = '18017390-57da3d02482166a97cd417d7d';
+const KEY_PEXELS      = '1DQboNmA7nYSIxexbVctwCz6CrXEMEudhlCW5GxCw8C5tJfA1wf3DkKX';
+const KEY_UNSPLASH    = 'dtzOYQ0iqydb5FdzbmJl72p2bW5l80QgyAHQkzNU8BY';
+const KEY_PIXABAY     = '18017390-57da3d02482166a97cd417d7d';
 
 // ---- Source toggles ----
 function toggleChip(src) {
@@ -434,29 +544,97 @@ function toggleChip(src) {
 function setViewMode(mode) {
   viewMode = mode;
   document.getElementById('btn-grid').classList.toggle('active', mode === 'grid');
+  document.getElementById('btn-compact').classList.toggle('active', mode === 'compact');
   document.getElementById('btn-list').classList.toggle('active', mode === 'list');
   const grid = document.getElementById('resultsGrid');
-  if (mode === 'list') { grid.classList.add('list-view'); }
-  else { grid.classList.remove('list-view'); }
+  grid.classList.remove('list-view', 'compact-view');
+  if (mode === 'list') grid.classList.add('list-view');
+  else if (mode === 'compact') grid.classList.add('compact-view');
 }
 
-// ---- Free-only filter ----
-function toggleFreeOnly() {
-  freeOnly = document.getElementById('freeOnlyToggle').checked;
+// ---- Filters ----
+function applyFilter(items) {
+  let filtered = items;
+  if (licenseFilter === 'free') filtered = filtered.filter(img => img.isCC0);
+  else if (licenseFilter === 'attribution') filtered = filtered.filter(img => !img.isCC0);
+  if (sizeFilter === 'large') filtered = filtered.filter(img => img.width >= 1000 && img.height >= 1000);
+  else if (sizeFilter === 'xl') filtered = filtered.filter(img => img.width >= 5000 && img.height >= 5000);
+  if (orientationFilter === 'landscape') filtered = filtered.filter(img => img.width && img.height && img.width > img.height * 1.05);
+  else if (orientationFilter === 'portrait') filtered = filtered.filter(img => img.width && img.height && img.height > img.width * 1.05);
+  else if (orientationFilter === 'square') filtered = filtered.filter(img => img.width && img.height && Math.abs(img.width - img.height) / Math.max(img.width, img.height) <= 0.05);
+  if (typeFilter !== 'all') filtered = filtered.filter(img => img.mediaType === typeFilter);
+  return filtered;
+}
+
+function setSizeFilter(mode) {
+  const lgEl = document.getElementById('lgOnlyToggle');
+  const xlEl = document.getElementById('xlOnlyToggle');
+  if (mode === 'large') {
+    if (lgEl.checked) { sizeFilter = 'large'; xlEl.checked = false; }
+    else { sizeFilter = 'all'; }
+  } else {
+    if (xlEl.checked) { sizeFilter = 'xl'; lgEl.checked = false; }
+    else { sizeFilter = 'all'; }
+  }
+  if (allItems.length > 0) reRender();
+}
+
+function setLicenseFilter(mode) {
+  const freeEl = document.getElementById('freeOnlyToggle');
+  const attrEl = document.getElementById('attrOnlyToggle');
+  if (mode === 'free') {
+    if (freeEl.checked) { licenseFilter = 'free'; attrEl.checked = false; }
+    else { licenseFilter = 'all'; }
+  } else {
+    if (attrEl.checked) { licenseFilter = 'attribution'; freeEl.checked = false; }
+    else { licenseFilter = 'all'; }
+  }
+  if (allItems.length > 0) reRender();
+}
+
+function setOrientationFilter(mode) {
+  const lEl = document.getElementById('landscapeToggle');
+  const pEl = document.getElementById('portraitToggle');
+  const sEl = document.getElementById('squareToggle');
+  const el = mode === 'landscape' ? lEl : mode === 'portrait' ? pEl : sEl;
+  if (el.checked) {
+    orientationFilter = mode;
+    [lEl, pEl, sEl].forEach(e => { if (e !== el) e.checked = false; });
+  } else {
+    orientationFilter = 'all';
+  }
+  if (allItems.length > 0) reRender();
+}
+
+function setTypeFilter(mode) {
+  const phEl = document.getElementById('photoToggle');
+  const ilEl = document.getElementById('illustrationToggle');
+  const icEl = document.getElementById('iconToggle');
+  const el = mode === 'photo' ? phEl : mode === 'illustration' ? ilEl : icEl;
+  if (el.checked) {
+    typeFilter = mode;
+    [phEl, ilEl, icEl].forEach(e => { if (e !== el) e.checked = false; });
+  } else {
+    typeFilter = 'all';
+  }
   if (allItems.length > 0) reRender();
 }
 
 function reRender() {
-  const filtered = freeOnly ? allItems.filter(img => img.isCC0) : allItems;
+  const filtered = applyFilter(allItems);
   const grid = document.getElementById('resultsGrid');
   grid.innerHTML = '';
-  if (viewMode === 'list') { grid.classList.add('list-view'); } else { grid.classList.remove('list-view'); }
+  grid.classList.remove('list-view', 'compact-view');
+  if (viewMode === 'list') grid.classList.add('list-view');
+  else if (viewMode === 'compact') grid.classList.add('compact-view');
   filtered.forEach(img => grid.appendChild(buildCard(img)));
-  // Update count display
   const header = document.getElementById('resultsHeader');
   const stateBox = document.getElementById('stateBox');
   if (filtered.length === 0 && allItems.length > 0) {
-    stateBox.innerHTML = '<div class="big">&#x1F512;</div><p>All results require attribution. Disable the "No attribution" filter or try different keywords.</p>';
+    const msg = licenseFilter === 'free'
+      ? 'All results require attribution. Disable the "No attribution" filter or try different keywords.'
+      : 'No results require attribution. Disable the "Attribution only" filter or try different keywords.';
+    stateBox.innerHTML = '<div class="big">&#x1F512;</div><p>' + msg + '</p>';
     stateBox.style.display = 'block';
     header.style.display = 'none';
   } else if (filtered.length === 0) {
@@ -468,11 +646,12 @@ function reRender() {
   }
   const breakdown = Object.keys(sourceCounts)
     .filter(src => sourceCounts[src] > 0)
-    .map(src => src.charAt(0).toUpperCase() + src.slice(1) + ' ' + sourceCounts[src])
+    .map(src => (SOURCE_LABELS[src] || src) + ' ' + sourceCounts[src])
     .join(' · ');
-  const countLabel = freeOnly
-    ? '<strong>' + filtered.length + '</strong> of ' + allItems.length + ' images (attribution-free only)'
-    : '<strong>' + allItems.length + '</strong> images loaded';
+  let countLabel;
+  if (licenseFilter === 'free') countLabel = '<strong>' + filtered.length + '</strong> of ' + allItems.length + ' images (attribution-free only)';
+  else if (licenseFilter === 'attribution') countLabel = '<strong>' + filtered.length + '</strong> of ' + allItems.length + ' images (attribution required only)';
+  else countLabel = '<strong>' + allItems.length + '</strong> images loaded';
   document.getElementById('resultsCount').innerHTML = countLabel + (breakdown ? ' &nbsp;—&nbsp; ' + breakdown : '');
 }
 
@@ -486,9 +665,9 @@ async function doSearch() {
   // Reset pagination
   isSearching = true;
   currentQuery = q;
-  pageState = { pexels: 1, unsplash: 1, pixabay: 1, openverse: 1 };
-  exhausted = { pexels: false, unsplash: false, pixabay: false, openverse: false };
-  sourceCounts = { pexels: 0, unsplash: 0, pixabay: 0, openverse: 0 };
+  pageState = Object.fromEntries(ALL_SOURCES.map(s => [s, 1]));
+  exhausted = Object.fromEntries(ALL_SOURCES.map(s => [s, false]));
+  sourceCounts = Object.fromEntries(ALL_SOURCES.map(s => [s, 0]));
   totalLoaded = 0;
 
   showLoading();
@@ -524,22 +703,32 @@ function shuffle(arr) {
   return arr;
 }
 
+// ---- Source-to-fetcher map ----
+const FETCHERS = {
+  pexels: fetchPexels, unsplash: fetchUnsplash, pixabay: fetchPixabay,
+  openverse: fetchOpenverse, wikimedia: fetchWikimedia, nasa: fetchNasa,
+  iconify: fetchIconify,
+};
+
 // ---- Fetch one page across active sources ----
 async function fetchPage(q) {
   const promises = [];
-  if (activeSources.pexels    && !exhausted.pexels)     promises.push(fetchPexels(q,     pageState.pexels));
-  if (activeSources.unsplash  && !exhausted.unsplash)   promises.push(fetchUnsplash(q,   pageState.unsplash));
-  if (activeSources.pixabay   && !exhausted.pixabay)    promises.push(fetchPixabay(q,    pageState.pixabay));
-  if (activeSources.openverse && !exhausted.openverse)  promises.push(fetchOpenverse(q,  pageState.openverse));
+  ALL_SOURCES.forEach(src => {
+    if (activeSources[src] && !exhausted[src]) promises.push(FETCHERS[src](q, pageState[src]));
+  });
 
   const results = await Promise.allSettled(promises);
   const all = [], errors = [];
   results.forEach(r => {
     if (r.status === 'fulfilled') {
-      all.push(...r.value.items);
+      // Filter out images below minimum dimensions (when known)
+      const sizedItems = r.value.items.filter(img =>
+        !img.width || !img.height || (img.width >= MIN_DIM && img.height >= MIN_DIM)
+      );
+      all.push(...sizedItems);
       const src = r.value.source;
       pageState[src]++;
-      sourceCounts[src] = (sourceCounts[src] || 0) + r.value.items.length;
+      sourceCounts[src] = (sourceCounts[src] || 0) + sizedItems.length;
       if (r.value.items.length < PER_SOURCE) exhausted[src] = true;
     } else {
       errors.push(r.reason);
@@ -557,10 +746,10 @@ async function fetchPexels(q, page) {
   const items = (data.photos || []).map(p => ({
     id: 'px_' + p.id, source: 'Pexels',
     title: p.alt || 'Pexels photo', photographer: p.photographer,
-    thumb: p.src.medium,
+    thumb: p.src.large,
     srcSet: { small: p.src.small, medium: p.src.medium, large: p.src.large, original: p.src.original },
     width: p.width, height: p.height, pageUrl: p.url,
-    license: 'Pexels License', licenseNote: 'Free to use for any purpose. No attribution required.', isCC0: true,
+    license: 'Pexels License', licenseNote: 'Free to use for any purpose. No attribution required.', isCC0: true, mediaType: 'photo',
   }));
   return { source: 'pexels', items };
 }
@@ -572,10 +761,10 @@ async function fetchUnsplash(q, page) {
   const items = (data.results || []).map(p => ({
     id: 'us_' + p.id, source: 'Unsplash',
     title: p.description || p.alt_description || 'Unsplash photo', photographer: p.user?.name,
-    thumb: p.urls.small,
+    thumb: p.urls.regular,
     srcSet: { small: p.urls.thumb, medium: p.urls.small, large: p.urls.regular, original: p.urls.full },
     width: p.width, height: p.height, pageUrl: p.links.html,
-    license: 'Unsplash License', licenseNote: 'Free to use for any purpose. No attribution required (appreciated).', isCC0: true,
+    license: 'Unsplash License', licenseNote: 'Free to use for any purpose. No attribution required (appreciated).', isCC0: true, mediaType: 'photo',
   }));
   return { source: 'unsplash', items };
 }
@@ -591,6 +780,7 @@ async function fetchPixabay(q, page) {
     srcSet: { small: p.previewURL, medium: p.webformatURL, large: p.largeImageURL, original: p.fullHDURL || p.largeImageURL },
     width: p.imageWidth, height: p.imageHeight, pageUrl: p.pageURL,
     license: 'Pixabay License', licenseNote: 'Free for commercial and educational use. No attribution required.', isCC0: true,
+    mediaType: (p.type === 'illustration' || p.type === 'vector') ? 'illustration' : 'photo',
   }));
   return { source: 'pixabay', items };
 }
@@ -612,27 +802,112 @@ async function fetchOpenverse(q, page) {
       pageUrl: p.foreign_landing_url || p.url,
       license: licLabel, licenseNote: isCC0 ? 'CC0 — No rights reserved. Free to use without any attribution.' : 'CC BY — Free to use with attribution to the creator.',
       isCC0, ovLicLabel: isCC0 ? 'CC0' : 'CC BY',
+      mediaType: (p.category === 'illustration' || p.category === 'digitized_artwork') ? 'illustration' : 'photo',
     };
   });
   return { source: 'openverse', items };
 }
 
+async function fetchWikimedia(q, page) {
+  const offset = (page - 1) * PER_SOURCE;
+  const res = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=${encodeURIComponent(q)}&gsrlimit=${PER_SOURCE}&gsroffset=${offset}&prop=imageinfo&iiprop=url|extmetadata|size|mime&iiurlwidth=600&format=json&origin=*`);
+  if (!res.ok) throw new Error('Wikimedia: ' + res.status);
+  const data = await res.json();
+  const pages = data.query?.pages || {};
+  const items = Object.values(pages).filter(p => {
+    const mime = p.imageinfo?.[0]?.mime || '';
+    return mime.startsWith('image/');
+  }).map(p => {
+    const info = p.imageinfo[0];
+    const meta = info.extmetadata || {};
+    const licShort = (meta.LicenseShortName?.value || '').toLowerCase();
+    const isCC0 = licShort.includes('cc0') || licShort.includes('public domain') || licShort === 'pd';
+    const licLabel = meta.LicenseShortName?.value || 'Wikimedia License';
+    // Strip HTML tags from artist field
+    const artist = (meta.Artist?.value || 'Unknown').replace(/<[^>]*>/g, '');
+    return {
+      id: 'wm_' + p.pageid, source: 'Wikimedia',
+      title: (meta.ImageDescription?.value || p.title.replace('File:', '')).replace(/<[^>]*>/g, ''),
+      photographer: artist,
+      thumb: info.thumburl || info.url,
+      srcSet: { small: info.thumburl || info.url, medium: info.thumburl || info.url, large: info.url, original: info.url },
+      width: info.width || null, height: info.height || null,
+      pageUrl: info.descriptionurl,
+      license: licLabel, licenseNote: isCC0 ? 'Public domain / CC0 — Free to use without attribution.' : licLabel + ' — Attribution may be required.',
+      isCC0, mediaType: (info.mime === 'image/svg+xml' || info.mime === 'image/png') ? 'illustration' : 'photo',
+    };
+  });
+  if (!data.continue) exhausted.wikimedia = true;
+  return { source: 'wikimedia', items };
+}
+
+async function fetchNasa(q, page) {
+  const res = await fetch(`https://images-api.nasa.gov/search?q=${encodeURIComponent(q)}&media_type=image&page=${page}&page_size=${PER_SOURCE}`);
+  if (!res.ok) throw new Error('NASA: ' + res.status);
+  const data = await res.json();
+  const collection = data.collection || {};
+  const items = (collection.items || []).filter(item => item.links?.length > 0).map(item => {
+    const d = item.data[0];
+    const thumb = item.links[0].href;
+    const nasaId = d.nasa_id;
+    return {
+      id: 'nasa_' + nasaId, source: 'NASA',
+      title: d.title || 'NASA image', photographer: d.photographer || d.center || 'NASA',
+      thumb: thumb,
+      srcSet: { small: thumb, medium: thumb, large: thumb, original: thumb },
+      width: null, height: null,
+      pageUrl: `https://images.nasa.gov/details/${nasaId}`,
+      license: 'Public Domain', licenseNote: 'NASA public domain — Free to use. Courtesy credit to NASA appreciated.',
+      isCC0: true, mediaType: 'photo',
+    };
+  });
+  const hasNext = (collection.links || []).some(l => l.rel === 'next');
+  if (!hasNext) exhausted.nasa = true;
+  return { source: 'nasa', items };
+}
+
+async function fetchIconify(q, page) {
+  const offset = (page - 1) * PER_SOURCE;
+  const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(q)}&limit=${PER_SOURCE}&start=${offset}`);
+  if (!res.ok) throw new Error('Iconify: ' + res.status);
+  const data = await res.json();
+  const icons = data.icons || [];
+  const items = icons.map(icon => {
+    // icon format is "prefix:name"
+    const [prefix, name] = icon.split(':');
+    const svgUrl = `https://api.iconify.design/${prefix}/${name}.svg`;
+    const previewUrl = `https://api.iconify.design/${prefix}/${name}.svg?width=256&height=256`;
+    return {
+      id: 'ic_' + icon, source: 'Iconify',
+      title: name.replace(/-/g, ' ').replace(/_/g, ' '), photographer: prefix,
+      thumb: previewUrl,
+      srcSet: { small: previewUrl, medium: previewUrl, large: svgUrl, original: svgUrl },
+      width: null, height: null,
+      pageUrl: `https://icon-sets.iconify.design/${prefix}/${name}/`,
+      license: 'Open Source', licenseNote: 'Open source icon — Free to use. Check icon set license for details.',
+      isCC0: true, mediaType: 'icon',
+    };
+  });
+  if (offset + PER_SOURCE >= (data.total || 0)) exhausted.iconify = true;
+  return { source: 'iconify', items };
+}
+
 // ---- Build a single image card element ----
 function buildCard(img) {
   const card = document.createElement('div');
-  card.className = 'img-card';
+  card.className = 'img-card' + (img.mediaType === 'icon' ? ' icon-card' : '');
   card.onclick = () => openModal(img);
 
   const dims = (img.width && img.height) ? img.width + ' × ' + img.height + ' px' : 'Unknown';
   const photographer = img.photographer ? escHtml(img.photographer) : 'Unknown';
   const dlUrl = img.srcSet.original || '';
   let badgeClass, badgeLabel;
-  if (img.source === 'Openverse') {
-    badgeClass = img.isCC0 ? 'license-cc0' : 'license-ccby';
-    badgeLabel = img.ovLicLabel;
-  } else {
+  if (img.isCC0) {
     badgeClass = 'license-free';
     badgeLabel = 'Free';
+  } else {
+    badgeClass = 'license-ccby';
+    badgeLabel = 'Attr';
   }
 
   card.innerHTML =
@@ -655,7 +930,7 @@ function buildCard(img) {
       <div class="list-bottom">
         <span class="list-license-pill">${escHtml(img.licenseNote)}</span>
         <span class="list-cc-badge ${badgeClass}">${badgeLabel}</span>
-        <a class="list-action" href="${escHtml(dlUrl)}" target="_blank" download onclick="event.stopPropagation()">&#x2193; Download</a>
+        <button class="list-action" onclick="event.stopPropagation(); downloadUrl('${escHtml(dlUrl)}', '${escHtml(img.title.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-'))}')">&#x2193; Download</button>
         <a class="list-action" href="${escHtml(img.pageUrl)}" target="_blank" onclick="event.stopPropagation()">Source &#x2197;</a>
       </div>
     </div>`;
@@ -666,10 +941,12 @@ function buildCard(img) {
 function renderBatch(items, fresh) {
   const grid = document.getElementById('resultsGrid');
   if (fresh) { grid.innerHTML = ''; allItems = []; }
-  if (viewMode === 'list') { grid.classList.add('list-view'); } else { grid.classList.remove('list-view'); }
+  grid.classList.remove('list-view', 'compact-view');
+  if (viewMode === 'list') grid.classList.add('list-view');
+  else if (viewMode === 'compact') grid.classList.add('compact-view');
   allItems.push(...items);
 
-  const visible = freeOnly ? items.filter(img => img.isCC0) : items;
+  const visible = applyFilter(items);
   visible.forEach(img => grid.appendChild(buildCard(img)));
 
   totalLoaded += items.length;
@@ -680,14 +957,17 @@ function updateUI(batchSize, q) {
   const header = document.getElementById('resultsHeader');
   const stateBox = document.getElementById('stateBox');
 
-  const visibleCount = freeOnly ? allItems.filter(img => img.isCC0).length : totalLoaded;
+  const visibleCount = applyFilter(allItems).length;
 
   if (totalLoaded === 0) {
     stateBox.innerHTML = '<div class="big">&#x1F50D;</div><p>No results found for "' + escHtml(q) + '". Try different keywords or enable more sources.</p>';
     stateBox.style.display = 'block';
     header.style.display = 'none';
   } else if (visibleCount === 0) {
-    stateBox.innerHTML = '<div class="big">&#x1F512;</div><p>All ' + totalLoaded + ' results require attribution. Disable the "No attribution" filter or try different keywords.</p>';
+    const msg = licenseFilter === 'free'
+      ? 'All ' + totalLoaded + ' results require attribution. Disable the "No attribution" filter or try different keywords.'
+      : 'No results require attribution. Disable the "Attribution only" filter or try different keywords.';
+    stateBox.innerHTML = '<div class="big">&#x1F512;</div><p>' + msg + '</p>';
     stateBox.style.display = 'block';
     header.style.display = 'none';
   } else {
@@ -698,11 +978,12 @@ function updateUI(batchSize, q) {
   // Build per-source breakdown
   const breakdown = Object.keys(sourceCounts)
     .filter(src => sourceCounts[src] > 0)
-    .map(src => src.charAt(0).toUpperCase() + src.slice(1) + ' ' + sourceCounts[src])
+    .map(src => (SOURCE_LABELS[src] || src) + ' ' + sourceCounts[src])
     .join(' · ');
-  const countLabel = freeOnly
-    ? '<strong>' + visibleCount + '</strong> of ' + totalLoaded + ' images (attribution-free only)'
-    : '<strong>' + totalLoaded + '</strong> images loaded';
+  let countLabel;
+  if (licenseFilter === 'free') countLabel = '<strong>' + visibleCount + '</strong> of ' + totalLoaded + ' images (attribution-free only)';
+  else if (licenseFilter === 'attribution') countLabel = '<strong>' + visibleCount + '</strong> of ' + totalLoaded + ' images (attribution required only)';
+  else countLabel = '<strong>' + totalLoaded + '</strong> images loaded';
   document.getElementById('resultsCount').innerHTML = countLabel + (breakdown ? ' &nbsp;—&nbsp; ' + breakdown : '');
 
   // Manage load-more button (reuse if exists)
@@ -737,6 +1018,16 @@ function openModal(img) {
   document.getElementById('modalSource').textContent = img.source;
   document.getElementById('modalTitle').textContent = img.title;
   document.getElementById('modalImg').src = img.thumb;
+  const imgPane = document.querySelector('.modal-img-pane');
+  if (img.mediaType === 'icon') {
+    imgPane.style.background = '#fff';
+    document.getElementById('modalImg').style.objectFit = 'contain';
+    document.getElementById('modalImg').style.padding = '32px';
+  } else {
+    imgPane.style.background = '';
+    document.getElementById('modalImg').style.objectFit = '';
+    document.getElementById('modalImg').style.padding = '';
+  }
   const licenseEl = document.getElementById('modalLicense');
   licenseEl.innerHTML = '';
   const strong = document.createElement('strong');
@@ -762,9 +1053,6 @@ function updateModalUrl() {
   imgEl.style.opacity = '0.5';
   imgEl.src = url || currentModal.thumb;
   imgEl.onload = () => { imgEl.style.opacity = '1'; };
-  const dlLink = document.getElementById('modalDownload');
-  dlLink.href = url;
-  dlLink.setAttribute('download', currentModal.filename || '');
 }
 
 function navigateModal(dir) {
@@ -794,6 +1082,32 @@ function copyUrl() {
     btn.textContent = 'Copied!'; btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
   });
+}
+
+// ---- Download ----
+function downloadUrl(url, filename) {
+  const btn = document.getElementById('modalDownload');
+  if (btn) { btn.textContent = 'Downloading…'; btn.disabled = true; }
+  fetch(url)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+    .then(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename || url.split('/').pop().split('?')[0] || 'image';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    })
+    .catch(() => { window.open(url, '_blank'); })
+    .finally(() => { if (btn) { btn.textContent = '\u2193 Download Image'; btn.disabled = false; } });
+}
+
+function downloadImage() {
+  if (!currentModal) return;
+  const url = currentModal.srcSet.original || currentModal.thumb;
+  const filename = currentModal.filename || currentModal.title.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-') || 'image';
+  downloadUrl(url, filename);
 }
 
 // ---- Errors ----
