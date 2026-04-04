@@ -385,6 +385,13 @@
           </label>
           <label class="toggle-label" for="portraitToggle">Portrait</label>
         </div>
+        <div class="toggle-wrap">
+          <label class="toggle-switch">
+            <input type="checkbox" id="squareToggle" onchange="setOrientationFilter('square')">
+            <span class="toggle-track"></span>
+          </label>
+          <label class="toggle-label" for="squareToggle">Square</label>
+        </div>
       </div>
 
       <!-- Type filter -->
@@ -505,7 +512,7 @@ let allItems = [];        // all loaded images for modal navigation
 let viewMode = 'grid';
 let licenseFilter = 'all'; // 'all', 'free' (no attribution), or 'attribution' (attribution required)
 let sizeFilter = 'all';    // 'all', 'large' (>=1000), or 'xl' (>=5000)
-let orientationFilter = 'all'; // 'all', 'landscape', or 'portrait'
+let orientationFilter = 'all'; // 'all', 'landscape', 'portrait', or 'square'
 let typeFilter = 'all';    // 'all', 'photo', 'illustration', or 'icon'
 
 // Pagination state
@@ -551,8 +558,9 @@ function applyFilter(items) {
   else if (licenseFilter === 'attribution') filtered = filtered.filter(img => !img.isCC0);
   if (sizeFilter === 'large') filtered = filtered.filter(img => img.width >= 1000 && img.height >= 1000);
   else if (sizeFilter === 'xl') filtered = filtered.filter(img => img.width >= 5000 && img.height >= 5000);
-  if (orientationFilter === 'landscape') filtered = filtered.filter(img => img.width && img.height && img.width > img.height);
-  else if (orientationFilter === 'portrait') filtered = filtered.filter(img => img.width && img.height && img.height > img.width);
+  if (orientationFilter === 'landscape') filtered = filtered.filter(img => img.width && img.height && img.width > img.height * 1.05);
+  else if (orientationFilter === 'portrait') filtered = filtered.filter(img => img.width && img.height && img.height > img.width * 1.05);
+  else if (orientationFilter === 'square') filtered = filtered.filter(img => img.width && img.height && Math.abs(img.width - img.height) / Math.max(img.width, img.height) <= 0.05);
   if (typeFilter !== 'all') filtered = filtered.filter(img => img.mediaType === typeFilter);
   return filtered;
 }
@@ -586,12 +594,13 @@ function setLicenseFilter(mode) {
 function setOrientationFilter(mode) {
   const lEl = document.getElementById('landscapeToggle');
   const pEl = document.getElementById('portraitToggle');
-  if (mode === 'landscape') {
-    if (lEl.checked) { orientationFilter = 'landscape'; pEl.checked = false; }
-    else { orientationFilter = 'all'; }
+  const sEl = document.getElementById('squareToggle');
+  const el = mode === 'landscape' ? lEl : mode === 'portrait' ? pEl : sEl;
+  if (el.checked) {
+    orientationFilter = mode;
+    [lEl, pEl, sEl].forEach(e => { if (e !== el) e.checked = false; });
   } else {
-    if (pEl.checked) { orientationFilter = 'portrait'; lEl.checked = false; }
-    else { orientationFilter = 'all'; }
+    orientationFilter = 'all';
   }
   if (allItems.length > 0) reRender();
 }
