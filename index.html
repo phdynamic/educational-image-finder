@@ -132,6 +132,7 @@
 
   /* Grid thumbnail */
   .img-thumb { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: var(--bg3); }
+  .img-card.icon-card .img-thumb { background: #fff; object-fit: contain; padding: 16px; }
 
   /* Grid footer bar */
   .img-grid-footer { padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; }
@@ -883,7 +884,7 @@ async function fetchIconify(q, page) {
 // ---- Build a single image card element ----
 function buildCard(img) {
   const card = document.createElement('div');
-  card.className = 'img-card';
+  card.className = 'img-card' + (img.mediaType === 'icon' ? ' icon-card' : '');
   card.onclick = () => openModal(img);
 
   const dims = (img.width && img.height) ? img.width + ' × ' + img.height + ' px' : 'Unknown';
@@ -1006,6 +1007,16 @@ function openModal(img) {
   document.getElementById('modalSource').textContent = img.source;
   document.getElementById('modalTitle').textContent = img.title;
   document.getElementById('modalImg').src = img.thumb;
+  const imgPane = document.querySelector('.modal-img-pane');
+  if (img.mediaType === 'icon') {
+    imgPane.style.background = '#fff';
+    document.getElementById('modalImg').style.objectFit = 'contain';
+    document.getElementById('modalImg').style.padding = '32px';
+  } else {
+    imgPane.style.background = '';
+    document.getElementById('modalImg').style.objectFit = '';
+    document.getElementById('modalImg').style.padding = '';
+  }
   const licenseEl = document.getElementById('modalLicense');
   licenseEl.innerHTML = '';
   const strong = document.createElement('strong');
