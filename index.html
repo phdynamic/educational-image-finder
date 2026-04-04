@@ -86,6 +86,7 @@
   .dot-openverse { background: #e5a423; }
   .dot-wikimedia { background: #069; }
   .dot-nasa { background: #fc3d21; }
+  .dot-iconify { background: #1769aa; }
 
   /* Free-only toggle */
   .toggle-wrap { display: flex; align-items: center; gap: 8px; }
@@ -323,6 +324,7 @@
           <button class="chip active" id="chip-openverse" onclick="toggleChip('openverse')"><span class="dot dot-openverse"></span>Openverse</button>
           <button class="chip active" id="chip-wikimedia" onclick="toggleChip('wikimedia')"><span class="dot dot-wikimedia"></span>Wikimedia</button>
           <button class="chip active" id="chip-nasa" onclick="toggleChip('nasa')"><span class="dot dot-nasa"></span>NASA</button>
+          <button class="chip active" id="chip-iconify" onclick="toggleChip('iconify')"><span class="dot dot-iconify"></span>Iconify</button>
         </div>
       </div>
 
@@ -485,8 +487,8 @@
 
 <script>
 // ---- State ----
-const ALL_SOURCES = ['pexels','unsplash','pixabay','openverse','wikimedia','nasa'];
-const SOURCE_LABELS = { pexels:'Pexels', unsplash:'Unsplash', pixabay:'Pixabay', openverse:'Openverse', wikimedia:'Wikimedia', nasa:'NASA' };
+const ALL_SOURCES = ['pexels','unsplash','pixabay','openverse','wikimedia','nasa','iconify'];
+const SOURCE_LABELS = { pexels:'Pexels', unsplash:'Unsplash', pixabay:'Pixabay', openverse:'Openverse', wikimedia:'Wikimedia', nasa:'NASA', iconify:'Iconify' };
 let activeSources = Object.fromEntries(ALL_SOURCES.map(s => [s, true]));
 
 let currentModal = null;
@@ -504,7 +506,7 @@ let exhausted = {};       // per-source: true when no more pages
 let totalLoaded = 0;
 let sourceCounts = {};    // per-source loaded count
 let isSearching = false;  // prevents duplicate searches
-const PER_SOURCE = 12;    // ~12 × 6 sources = ~72 per load
+const PER_SOURCE = 10;    // ~10 × 7 sources = ~70 per load
 const MIN_DIM = 500;      // exclude images smaller than 500×500 (when dimensions known)
 
 // ---- API Keys (hardcoded) ----
@@ -686,6 +688,7 @@ function shuffle(arr) {
 const FETCHERS = {
   pexels: fetchPexels, unsplash: fetchUnsplash, pixabay: fetchPixabay,
   openverse: fetchOpenverse, wikimedia: fetchWikimedia, nasa: fetchNasa,
+  iconify: fetchIconify,
 };
 
 // ---- Fetch one page across active sources ----
@@ -842,6 +845,32 @@ async function fetchNasa(q, page) {
   const hasNext = (collection.links || []).some(l => l.rel === 'next');
   if (!hasNext) exhausted.nasa = true;
   return { source: 'nasa', items };
+}
+
+async function fetchIconify(q, page) {
+  const offset = (page - 1) * PER_SOURCE;
+  const res = await fetch(`https://api.iconify.design/search?query=${encodeURIComponent(q)}&limit=${PER_SOURCE}&start=${offset}`);
+  if (!res.ok) throw new Error('Iconify: ' + res.status);
+  const data = await res.json();
+  const icons = data.icons || [];
+  const items = icons.map(icon => {
+    // icon format is "prefix:name"
+    const [prefix, name] = icon.split(':');
+    const svgUrl = `https://api.iconify.design/${prefix}/${name}.svg`;
+    const previewUrl = `https://api.iconify.design/${prefix}/${name}.svg?width=256&height=256`;
+    return {
+      id: 'ic_' + icon, source: 'Iconify',
+      title: name.replace(/-/g, ' ').replace(/_/g, ' '), photographer: prefix,
+      thumb: previewUrl,
+      srcSet: { small: previewUrl, medium: previewUrl, large: svgUrl, original: svgUrl },
+      width: null, height: null,
+      pageUrl: `https://icon-sets.iconify.design/${prefix}/${name}/`,
+      license: 'Open Source', licenseNote: 'Open source icon — Free to use. Check icon set license for details.',
+      isCC0: true, mediaType: 'illustration',
+    };
+  });
+  if (offset + PER_SOURCE >= (data.total || 0)) exhausted.iconify = true;
+  return { source: 'iconify', items };
 }
 
 // ---- Build a single image card element ----
