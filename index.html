@@ -391,6 +391,7 @@
       </div>
       <div class="btn-row">
         <a class="btn-download" id="modalDownload" href="#" target="_blank" download>&#x2193; Download Image</a>
+        <button class="btn-download" id="stashlyBtn" onclick="sendToStashly()" style="background:rgba(230,57,70,0.3);border-color:rgba(230,57,70,0.5);color:#e63946;">&#x2197; Send to Stashly</button>
         <a class="btn-open" id="modalOpen" href="#" target="_blank">Open source page</a>
       </div>
     </div>
@@ -805,6 +806,58 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowLeft' && currentModal) navigateModal(-1);
   if (e.key === 'ArrowRight' && currentModal) navigateModal(1);
 });
+
+// ---- Stashly Integration ----
+async function sendToStashly() {
+  if (!currentModal) return;
+  const btn = document.getElementById('stashlyBtn');
+  const origText = btn.innerHTML;
+  btn.innerHTML = 'Sending...';
+  btn.disabled = true;
+
+  try {
+    const img = currentModal;
+    const res = await fetch('http://127.0.0.1:9473/api/ingest', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: img.srcSet.original || img.srcSet.large || img.thumb,
+        title: img.title || '',
+        description: img.title || '',
+        tags: (img.title || '').toLowerCase().split(/\s+/).filter(w => w.length > 3),
+        source: img.source || '',
+        photographer: img.photographer || '',
+      }),
+    });
+
+    if (res.ok) {
+      btn.innerHTML = '&#x2713; Sent!';
+      btn.style.borderColor = '#10b981';
+      btn.style.color = '#10b981';
+      setTimeout(() => {
+        btn.innerHTML = origText;
+        btn.style.borderColor = '';
+        btn.style.color = '';
+        btn.disabled = false;
+      }, 2000);
+    } else {
+      const err = await res.json();
+      throw new Error(err.error || 'Failed');
+    }
+  } catch (e) {
+    btn.innerHTML = e.message === 'Failed to fetch'
+      ? '&#x2717; Stashly not running'
+      : '&#x2717; ' + e.message;
+    btn.style.borderColor = '#e63946';
+    btn.style.color = '#e63946';
+    setTimeout(() => {
+      btn.innerHTML = origText;
+      btn.style.borderColor = '';
+      btn.style.color = '';
+      btn.disabled = false;
+    }, 3000);
+  }
+}
 </script>
 </body>
 </html>
