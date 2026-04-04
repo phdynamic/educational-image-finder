@@ -254,7 +254,8 @@
   .btn-copy { background: var(--surface2); border: 1px solid var(--border2); color: var(--purple2); font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500; padding: 8px 14px; border-radius: var(--radius2); cursor: pointer; transition: background 0.15s; white-space: nowrap; }
   .btn-copy:hover { background: var(--tag-bg); }
   .btn-copy.copied { color: var(--success); }
-  .btn-download { width: 100%; background: var(--purple3); border: 1px solid var(--purple); color: var(--accent); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; padding: 13px; border-radius: var(--radius2); cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+  .btn-download { width: 100%; background: var(--purple3); border: 1px solid var(--purple); color: var(--accent); font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; padding: 13px; border-radius: var(--radius2); cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .btn-download:disabled { opacity: 0.6; cursor: default; }
   .btn-download:hover { background: rgba(124,92,191,0.85); }
   .btn-open { width: 100%; background: transparent; border: 1px solid var(--border2); color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 10px; border-radius: var(--radius2); cursor: pointer; transition: border-color 0.15s, color 0.15s; text-align: center; text-decoration: none; display: block; }
   .btn-open:hover { border-color: var(--purple3); color: var(--purple2); }
@@ -486,7 +487,7 @@
         </div>
       </div>
       <div class="btn-row">
-        <a class="btn-download" id="modalDownload" href="#" target="_blank" download>&#x2193; Download Image</a>
+        <button class="btn-download" id="modalDownload" onclick="downloadImage()">&#x2193; Download Image</button>
         <a class="btn-open" id="modalOpen" href="#" target="_blank">Open source page</a>
       </div>
     </div>
@@ -919,7 +920,7 @@ function buildCard(img) {
       <div class="list-bottom">
         <span class="list-license-pill">${escHtml(img.licenseNote)}</span>
         <span class="list-cc-badge ${badgeClass}">${badgeLabel}</span>
-        <a class="list-action" href="${escHtml(dlUrl)}" target="_blank" download onclick="event.stopPropagation()">&#x2193; Download</a>
+        <button class="list-action" onclick="event.stopPropagation(); downloadUrl('${escHtml(dlUrl)}', '${escHtml(img.title.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-'))}')">&#x2193; Download</button>
         <a class="list-action" href="${escHtml(img.pageUrl)}" target="_blank" onclick="event.stopPropagation()">Source &#x2197;</a>
       </div>
     </div>`;
@@ -1042,9 +1043,6 @@ function updateModalUrl() {
   imgEl.style.opacity = '0.5';
   imgEl.src = url || currentModal.thumb;
   imgEl.onload = () => { imgEl.style.opacity = '1'; };
-  const dlLink = document.getElementById('modalDownload');
-  dlLink.href = url;
-  dlLink.setAttribute('download', currentModal.filename || '');
 }
 
 function navigateModal(dir) {
@@ -1074,6 +1072,32 @@ function copyUrl() {
     btn.textContent = 'Copied!'; btn.classList.add('copied');
     setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
   });
+}
+
+// ---- Download ----
+function downloadUrl(url, filename) {
+  const btn = document.getElementById('modalDownload');
+  if (btn) { btn.textContent = 'Downloading…'; btn.disabled = true; }
+  fetch(url)
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.blob(); })
+    .then(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename || url.split('/').pop().split('?')[0] || 'image';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(a.href);
+    })
+    .catch(() => { window.open(url, '_blank'); })
+    .finally(() => { if (btn) { btn.textContent = '\u2193 Download Image'; btn.disabled = false; } });
+}
+
+function downloadImage() {
+  if (!currentModal) return;
+  const url = currentModal.srcSet.original || currentModal.thumb;
+  const filename = currentModal.filename || currentModal.title.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-') || 'image';
+  downloadUrl(url, filename);
 }
 
 // ---- Errors ----
