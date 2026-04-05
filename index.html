@@ -110,8 +110,9 @@
   .view-btn.active { background: var(--tag-bg); color: var(--purple2); }
 
   /* ---- Results header ---- */
-  .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .results-count { font-size: 13px; color: var(--text3); }
+  .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; flex-wrap: wrap; }
+  .results-count { font-size: 13px; color: var(--text3); min-width: 0; }
+  .view-toggle { flex-shrink: 0; }
   .results-count strong { color: var(--purple2); }
   .source-link { color: var(--text3); cursor: pointer; transition: color 0.15s; border: none; background: none; font: inherit; padding: 0; }
   .source-link:hover { color: var(--purple2); }
