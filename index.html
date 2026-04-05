@@ -88,7 +88,6 @@
   .dot-wikimedia { background: #069; }
   .dot-nasa { background: #fc3d21; }
   .dot-iconify { background: #1769aa; }
-  .dot-met { background: #e4002b; }
   .dot-rijks { background: #c19a5b; }
   .dot-harvard { background: #a51c30; }
 
@@ -331,7 +330,6 @@
           <button class="chip active" id="chip-wikimedia" onclick="toggleChip('wikimedia')"><span class="dot dot-wikimedia"></span>Wikimedia</button>
           <button class="chip active" id="chip-nasa" onclick="toggleChip('nasa')"><span class="dot dot-nasa"></span>NASA</button>
           <button class="chip active" id="chip-iconify" onclick="toggleChip('iconify')"><span class="dot dot-iconify"></span>Iconify</button>
-          <button class="chip active" id="chip-met" onclick="toggleChip('met')"><span class="dot dot-met"></span>Met Museum</button>
           <button class="chip active" id="chip-rijks" onclick="toggleChip('rijks')"><span class="dot dot-rijks"></span>Rijksmuseum</button>
           <button class="chip active" id="chip-harvard" onclick="toggleChip('harvard')"><span class="dot dot-harvard"></span>Harvard Art</button>
         </div>
@@ -511,8 +509,8 @@
 
 <script>
 // ---- State ----
-const ALL_SOURCES = ['pexels','unsplash','pixabay','openverse','wikimedia','nasa','iconify','met','rijks','harvard'];
-const SOURCE_LABELS = { pexels:'Pexels', unsplash:'Unsplash', pixabay:'Pixabay', openverse:'Openverse', wikimedia:'Wikimedia', nasa:'NASA', iconify:'Iconify', met:'Met Museum', rijks:'Rijksmuseum', harvard:'Harvard Art' };
+const ALL_SOURCES = ['pexels','unsplash','pixabay','openverse','wikimedia','nasa','iconify','rijks','harvard'];
+const SOURCE_LABELS = { pexels:'Pexels', unsplash:'Unsplash', pixabay:'Pixabay', openverse:'Openverse', wikimedia:'Wikimedia', nasa:'NASA', iconify:'Iconify', rijks:'Rijksmuseum', harvard:'Harvard Art' };
 let activeSources = Object.fromEntries(ALL_SOURCES.map(s => [s, true]));
 
 let currentModal = null;
@@ -677,7 +675,6 @@ async function doSearch() {
   pageState = Object.fromEntries(ALL_SOURCES.map(s => [s, 1]));
   exhausted = Object.fromEntries(ALL_SOURCES.map(s => [s, false]));
   sourceCounts = Object.fromEntries(ALL_SOURCES.map(s => [s, 0]));
-  metObjectIDs = []; metQuery = '';
   totalLoaded = 0;
 
   showLoading();
@@ -717,7 +714,7 @@ function shuffle(arr) {
 const FETCHERS = {
   pexels: fetchPexels, unsplash: fetchUnsplash, pixabay: fetchPixabay,
   openverse: fetchOpenverse, wikimedia: fetchWikimedia, nasa: fetchNasa,
-  iconify: fetchIconify, met: fetchMet, rijks: fetchRijks, harvard: fetchHarvard,
+  iconify: fetchIconify, rijks: fetchRijks, harvard: fetchHarvard,
 };
 
 // ---- Fetch one page across active sources ----
@@ -900,51 +897,6 @@ async function fetchIconify(q, page) {
   });
   if (offset + PER_SOURCE >= (data.total || 0)) exhausted.iconify = true;
   return { source: 'iconify', items };
-}
-
-// Met Museum: cache search IDs so we can paginate through them
-let metObjectIDs = [];
-let metQuery = '';
-
-async function fetchMet(q, page) {
-  // On first page or new query, fetch all matching IDs and shuffle them
-  if (page === 1 || metQuery !== q) {
-    metQuery = q;
-    const searchRes = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/search?q=${encodeURIComponent(q)}&hasImages=true`);
-    if (!searchRes.ok) throw new Error('Met Museum: ' + searchRes.status);
-    const searchData = await searchRes.json();
-    metObjectIDs = searchData.objectIDs || [];
-    // Limit to first 200 IDs to avoid fetching thousands of objects
-    metObjectIDs = metObjectIDs.slice(0, 200);
-  }
-  // Slice the IDs for this page
-  const start = (page - 1) * PER_SOURCE;
-  const ids = metObjectIDs.slice(start, start + PER_SOURCE);
-  if (ids.length === 0) { exhausted.met = true; return { source: 'met', items: [] }; }
-  // Fetch each object in parallel
-  const objs = await Promise.allSettled(ids.map(id =>
-    fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`).then(r => r.json())
-  ));
-  // Filter to public domain with images, deduplicate by image URL
-  const seen = new Set();
-  const items = objs
-    .filter(r => r.status === 'fulfilled' && r.value.primaryImageSmall && r.value.isPublicDomain)
-    .filter(r => { const url = r.value.primaryImageSmall; if (seen.has(url)) return false; seen.add(url); return true; })
-    .map(r => {
-      const p = r.value;
-      return {
-        id: 'met_' + p.objectID, source: 'Met Museum',
-        title: p.title || 'Met Museum artwork', photographer: p.artistDisplayName || 'Unknown',
-        thumb: p.primaryImageSmall,
-        srcSet: { small: p.primaryImageSmall, medium: p.primaryImageSmall, large: p.primaryImage || p.primaryImageSmall, original: p.primaryImage || p.primaryImageSmall },
-        width: null, height: null,
-        pageUrl: p.objectURL,
-        license: 'Public Domain', licenseNote: 'Public domain — Free to use without restriction.',
-        isCC0: true, mediaType: 'illustration',
-      };
-    });
-  if (start + PER_SOURCE >= metObjectIDs.length) exhausted.met = true;
-  return { source: 'met', items };
 }
 
 async function fetchRijks(q, page) {
