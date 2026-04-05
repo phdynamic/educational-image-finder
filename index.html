@@ -88,6 +88,9 @@
   .dot-wikimedia { background: #069; }
   .dot-nasa { background: #fc3d21; }
   .dot-iconify { background: #1769aa; }
+  .dot-met { background: #e4002b; }
+  .dot-rijks { background: #c19a5b; }
+  .dot-harvard { background: #a51c30; }
 
   /* Free-only toggle */
   .toggle-wrap { display: flex; align-items: center; gap: 8px; }
@@ -328,6 +331,9 @@
           <button class="chip active" id="chip-wikimedia" onclick="toggleChip('wikimedia')"><span class="dot dot-wikimedia"></span>Wikimedia</button>
           <button class="chip active" id="chip-nasa" onclick="toggleChip('nasa')"><span class="dot dot-nasa"></span>NASA</button>
           <button class="chip active" id="chip-iconify" onclick="toggleChip('iconify')"><span class="dot dot-iconify"></span>Iconify</button>
+          <button class="chip active" id="chip-met" onclick="toggleChip('met')"><span class="dot dot-met"></span>Met Museum</button>
+          <button class="chip active" id="chip-rijks" onclick="toggleChip('rijks')"><span class="dot dot-rijks"></span>Rijksmuseum</button>
+          <button class="chip active" id="chip-harvard" onclick="toggleChip('harvard')"><span class="dot dot-harvard"></span>Harvard Art</button>
         </div>
       </div>
 
@@ -505,8 +511,8 @@
 
 <script>
 // ---- State ----
-const ALL_SOURCES = ['pexels','unsplash','pixabay','openverse','wikimedia','nasa','iconify'];
-const SOURCE_LABELS = { pexels:'Pexels', unsplash:'Unsplash', pixabay:'Pixabay', openverse:'Openverse', wikimedia:'Wikimedia', nasa:'NASA', iconify:'Iconify' };
+const ALL_SOURCES = ['pexels','unsplash','pixabay','openverse','wikimedia','nasa','iconify','met','rijks','harvard'];
+const SOURCE_LABELS = { pexels:'Pexels', unsplash:'Unsplash', pixabay:'Pixabay', openverse:'Openverse', wikimedia:'Wikimedia', nasa:'NASA', iconify:'Iconify', met:'Met Museum', rijks:'Rijksmuseum', harvard:'Harvard Art' };
 let activeSources = Object.fromEntries(ALL_SOURCES.map(s => [s, true]));
 
 let currentModal = null;
@@ -524,7 +530,7 @@ let exhausted = {};       // per-source: true when no more pages
 let totalLoaded = 0;
 let sourceCounts = {};    // per-source loaded count
 let isSearching = false;  // prevents duplicate searches
-const PER_SOURCE = 10;    // ~10 × 7 sources = ~70 per load
+const PER_SOURCE = 8;     // ~8 × 10 sources = ~80 per load
 const MIN_DIM = 500;      // exclude images smaller than 500×500 (when dimensions known)
 
 // ---- API Keys (hardcoded) ----
@@ -534,6 +540,8 @@ const MIN_DIM = 500;      // exclude images smaller than 500×500 (when dimensio
 const KEY_PEXELS      = '1DQboNmA7nYSIxexbVctwCz6CrXEMEudhlCW5GxCw8C5tJfA1wf3DkKX';
 const KEY_UNSPLASH    = 'dtzOYQ0iqydb5FdzbmJl72p2bW5l80QgyAHQkzNU8BY';
 const KEY_PIXABAY     = '18017390-57da3d02482166a97cd417d7d';
+const KEY_RIJKS       = ''; // Register at https://data.rijksmuseum.nl/ for a free key
+const KEY_HARVARD     = 'a741fdfd-4908-489d-b642-83b9c1af4323';
 
 // ---- Source toggles ----
 function toggleChip(src) {
@@ -669,6 +677,7 @@ async function doSearch() {
   pageState = Object.fromEntries(ALL_SOURCES.map(s => [s, 1]));
   exhausted = Object.fromEntries(ALL_SOURCES.map(s => [s, false]));
   sourceCounts = Object.fromEntries(ALL_SOURCES.map(s => [s, 0]));
+  metObjectIDs = []; metQuery = '';
   totalLoaded = 0;
 
   showLoading();
@@ -708,7 +717,7 @@ function shuffle(arr) {
 const FETCHERS = {
   pexels: fetchPexels, unsplash: fetchUnsplash, pixabay: fetchPixabay,
   openverse: fetchOpenverse, wikimedia: fetchWikimedia, nasa: fetchNasa,
-  iconify: fetchIconify,
+  iconify: fetchIconify, met: fetchMet, rijks: fetchRijks, harvard: fetchHarvard,
 };
 
 // ---- Fetch one page across active sources ----
@@ -891,6 +900,88 @@ async function fetchIconify(q, page) {
   });
   if (offset + PER_SOURCE >= (data.total || 0)) exhausted.iconify = true;
   return { source: 'iconify', items };
+}
+
+// Met Museum: cache search IDs so we can paginate through them
+let metObjectIDs = [];
+let metQuery = '';
+
+async function fetchMet(q, page) {
+  // On first page or new query, fetch all matching IDs
+  if (page === 1 || metQuery !== q) {
+    metQuery = q;
+    const searchRes = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/search?q=${encodeURIComponent(q)}&hasImages=true&isPublicDomain=true`);
+    if (!searchRes.ok) throw new Error('Met Museum: ' + searchRes.status);
+    const searchData = await searchRes.json();
+    metObjectIDs = searchData.objectIDs || [];
+  }
+  // Slice the IDs for this page
+  const start = (page - 1) * PER_SOURCE;
+  const ids = metObjectIDs.slice(start, start + PER_SOURCE);
+  if (ids.length === 0) { exhausted.met = true; return { source: 'met', items: [] }; }
+  // Fetch each object in parallel
+  const objs = await Promise.allSettled(ids.map(id =>
+    fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`).then(r => r.json())
+  ));
+  const items = objs
+    .filter(r => r.status === 'fulfilled' && r.value.primaryImageSmall)
+    .map(r => {
+      const p = r.value;
+      return {
+        id: 'met_' + p.objectID, source: 'Met Museum',
+        title: p.title || 'Met Museum artwork', photographer: p.artistDisplayName || 'Unknown',
+        thumb: p.primaryImageSmall,
+        srcSet: { small: p.primaryImageSmall, medium: p.primaryImageSmall, large: p.primaryImage || p.primaryImageSmall, original: p.primaryImage || p.primaryImageSmall },
+        width: null, height: null,
+        pageUrl: p.objectURL,
+        license: 'Public Domain', licenseNote: 'Public domain — Free to use without restriction.',
+        isCC0: true, mediaType: 'illustration',
+      };
+    });
+  if (start + PER_SOURCE >= metObjectIDs.length) exhausted.met = true;
+  return { source: 'met', items };
+}
+
+async function fetchRijks(q, page) {
+  if (!KEY_RIJKS) { exhausted.rijks = true; return { source: 'rijks', items: [] }; }
+  const res = await fetch(`https://www.rijksmuseum.nl/api/en/collection?key=${KEY_RIJKS}&q=${encodeURIComponent(q)}&imgonly=True&ps=${PER_SOURCE}&p=${page}`);
+  if (!res.ok) throw new Error('Rijksmuseum: ' + res.status);
+  const data = await res.json();
+  const items = (data.artObjects || []).filter(a => a.webImage?.url).map(a => ({
+    id: 'rij_' + a.objectNumber, source: 'Rijksmuseum',
+    title: a.title || 'Rijksmuseum artwork', photographer: a.principalOrFirstMaker || 'Unknown',
+    thumb: a.webImage.url + '=s400',
+    srcSet: { small: a.webImage.url + '=s200', medium: a.webImage.url + '=s400', large: a.webImage.url + '=s800', original: a.webImage.url },
+    width: a.webImage.width || null, height: a.webImage.height || null,
+    pageUrl: a.links?.web || `https://www.rijksmuseum.nl/en/collection/${a.objectNumber}`,
+    license: 'Public Domain', licenseNote: 'Rijksmuseum — Public domain. Free to use without restriction.',
+    isCC0: true, mediaType: 'illustration',
+  }));
+  if (page * PER_SOURCE >= (data.count || 0)) exhausted.rijks = true;
+  return { source: 'rijks', items };
+}
+
+async function fetchHarvard(q, page) {
+  const res = await fetch(`https://api.harvardartmuseums.org/object?apikey=${KEY_HARVARD}&keyword=${encodeURIComponent(q)}&hasimage=1&size=${PER_SOURCE}&page=${page}&fields=objectid,title,people,primaryimageurl,images,url,imagepermissionlevel`);
+  if (!res.ok) throw new Error('Harvard Art: ' + res.status);
+  const data = await res.json();
+  const items = (data.records || []).filter(r => r.primaryimageurl).map(r => {
+    const artist = r.people?.length ? r.people[0].name : 'Unknown';
+    const thumb = r.primaryimageurl + '?width=400';
+    return {
+      id: 'hv_' + r.objectid, source: 'Harvard Art',
+      title: r.title || 'Harvard Art Museums artwork', photographer: artist,
+      thumb: thumb,
+      srcSet: { small: r.primaryimageurl + '?width=200', medium: thumb, large: r.primaryimageurl + '?width=1200', original: r.primaryimageurl },
+      width: null, height: null,
+      pageUrl: r.url || `https://harvardartmuseums.org/collections/object/${r.objectid}`,
+      license: 'Fair Use', licenseNote: 'Harvard Art Museums — Image may be used for educational and personal purposes.',
+      isCC0: true, mediaType: 'illustration',
+    };
+  });
+  const info = data.info || {};
+  if (page >= info.pages) exhausted.harvard = true;
+  return { source: 'harvard', items };
 }
 
 // ---- Build a single image card element ----
