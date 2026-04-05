@@ -72,6 +72,7 @@
   .btn-search:active { transform: scale(0.98); }
 
   .controls-row { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .filters-row { border-top: 1px solid var(--border); padding-top: 14px; margin-top: 2px; }
   .control-group { display: flex; flex-direction: column; gap: 6px; }
   .control-group > label { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
 
@@ -332,7 +333,9 @@
           <button class="chip active" id="chip-harvard" onclick="toggleChip('harvard')"><span class="dot dot-harvard"></span>Harvard Art</button>
         </div>
       </div>
+    </div>
 
+    <div class="controls-row filters-row">
       <!-- License filter toggles -->
       <div class="control-group">
         <label>License</label>
