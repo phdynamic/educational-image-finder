@@ -298,6 +298,21 @@
     .modal-img-pane { border-radius: 16px 16px 0 0; min-height: 200px; }
     #resultsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     #resultsGrid.compact-view { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    #resultsGrid.list-view .img-card {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+    #resultsGrid.list-view .img-thumb {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16/9;
+      grid-column: 1;
+      grid-row: 1;
+    }
+    #resultsGrid.list-view .img-list-detail {
+      grid-column: 1;
+      grid-row: 2;
+    }
     .modal-nav.prev { left: 8px; }
     .modal-nav.next { right: 8px; }
   }
