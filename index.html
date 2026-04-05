@@ -985,7 +985,7 @@ function buildCard(img) {
         <span class="list-license-pill">${escHtml(img.licenseNote)}</span>
         <span class="list-cc-badge ${badgeClass}">${badgeLabel}</span>
         <button class="list-action" onclick="event.stopPropagation(); downloadUrl('${escHtml(dlUrl)}', '${escHtml(img.title.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-'))}')">&#x2193; Download</button>
-        <a class="list-action" href="${escHtml(img.pageUrl)}" target="_blank" onclick="event.stopPropagation()">Source &#x2197;</a>
+        <a class="list-action" href="${escHtml(safeUrl(img.pageUrl))}" target="_blank" onclick="event.stopPropagation()">Source &#x2197;</a>
       </div>
     </div>`;
   return card;
@@ -1085,7 +1085,7 @@ function openModal(img) {
   strong.textContent = img.license;
   licenseEl.appendChild(strong);
   licenseEl.appendChild(document.createTextNode(' — ' + img.licenseNote));
-  document.getElementById('modalOpen').href = img.pageUrl;
+  document.getElementById('modalOpen').href = safeUrl(img.pageUrl);
   let attrHtml = '';
   if (img.photographer) attrHtml += `<div class="attr-row"><span class="attr-label">By</span><span class="attr-val">${escHtml(img.photographer)}</span></div>`;
   if (img.width && img.height) attrHtml += `<div class="attr-row"><span class="attr-label">Size</span><span class="attr-val">${img.width} × ${img.height} px</span></div>`;
@@ -1137,6 +1137,7 @@ function copyUrl() {
 
 // ---- Download ----
 function downloadUrl(url, filename) {
+  if (!safeUrl(url)) return;
   const btn = document.getElementById('modalDownload');
   if (btn) { btn.textContent = 'Downloading…'; btn.disabled = true; }
   fetch(url)
@@ -1150,7 +1151,7 @@ function downloadUrl(url, filename) {
       a.remove();
       URL.revokeObjectURL(a.href);
     })
-    .catch(() => { window.open(url, '_blank'); })
+    .catch(() => { const safe = safeUrl(url); if (safe) window.open(safe, '_blank'); })
     .finally(() => { if (btn) { btn.textContent = '\u2193 Download Image'; btn.disabled = false; } });
 }
 
@@ -1164,7 +1165,8 @@ function downloadImage() {
 // ---- Errors ----
 function showError(msg) { const el = document.getElementById('errorBox'); el.textContent = msg; el.classList.remove('hidden'); }
 function clearError() { document.getElementById('errorBox').classList.add('hidden'); }
-function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;'); }
+function safeUrl(url) { try { const u = new URL(url); return (u.protocol === 'https:' || u.protocol === 'http:') ? url : ''; } catch { return ''; } }
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
