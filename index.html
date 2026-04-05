@@ -907,13 +907,13 @@ let metObjectIDs = [];
 let metQuery = '';
 
 async function fetchMet(q, page) {
-  // On first page or new query, fetch all matching IDs
+  // On first page or new query, fetch all matching IDs and shuffle them
   if (page === 1 || metQuery !== q) {
     metQuery = q;
     const searchRes = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/search?q=${encodeURIComponent(q)}&hasImages=true&isPublicDomain=true`);
     if (!searchRes.ok) throw new Error('Met Museum: ' + searchRes.status);
     const searchData = await searchRes.json();
-    metObjectIDs = searchData.objectIDs || [];
+    metObjectIDs = shuffle((searchData.objectIDs || []).slice());
   }
   // Slice the IDs for this page
   const start = (page - 1) * PER_SOURCE;
@@ -923,8 +923,11 @@ async function fetchMet(q, page) {
   const objs = await Promise.allSettled(ids.map(id =>
     fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`).then(r => r.json())
   ));
+  // Deduplicate by image URL
+  const seen = new Set();
   const items = objs
     .filter(r => r.status === 'fulfilled' && r.value.primaryImageSmall)
+    .filter(r => { const url = r.value.primaryImageSmall; if (seen.has(url)) return false; seen.add(url); return true; })
     .map(r => {
       const p = r.value;
       return {
