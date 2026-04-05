@@ -114,11 +114,6 @@
   .results-count { font-size: 13px; color: var(--text3); min-width: 0; }
   .view-toggle { flex-shrink: 0; }
   .results-count strong { color: var(--purple2); }
-  .source-link { color: var(--text3); cursor: pointer; border: none; background: none; font: inherit; padding: 2px 4px; margin: -2px -4px; border-radius: 4px; outline: none; -webkit-tap-highlight-color: transparent; }
-  .source-link:hover { color: var(--purple2); }
-  .source-link.active-source { color: var(--purple2); background: var(--tag-bg); }
-  .clear-filter { color: var(--danger); cursor: pointer; border: none; background: none; font: inherit; font-size: 12px; padding: 0; margin-left: 6px; transition: opacity 0.15s; outline: none; }
-  .clear-filter:hover { opacity: 0.7; }
 
   /* ---- GRID VIEW ---- */
   #resultsGrid {
@@ -542,7 +537,6 @@ let licenseFilter = 'all'; // 'all', 'free' (no attribution), or 'attribution' (
 let sizeFilter = 'all';    // 'all', 'large' (>=1000), or 'xl' (>=5000)
 let orientationFilter = 'all'; // 'all', 'landscape', 'portrait', or 'square'
 let typeFilter = 'all';    // 'all', 'photo', 'illustration', or 'icon'
-let sourceFilter = null;   // null = show all, or a source key like 'pexels' to filter
 
 // Pagination state
 let currentQuery = '';
@@ -567,6 +561,7 @@ const KEY_HARVARD     = 'a741fdfd-4908-489d-b642-83b9c1af4323';
 function toggleChip(src) {
   activeSources[src] = !activeSources[src];
   document.getElementById('chip-' + src).classList.toggle('active', activeSources[src]);
+  if (allItems.length > 0) reRender();
 }
 
 // ---- View mode ----
@@ -592,27 +587,16 @@ function applyFilter(items) {
   else if (orientationFilter === 'portrait') filtered = filtered.filter(img => img.width && img.height && img.height > img.width * 1.05);
   else if (orientationFilter === 'square') filtered = filtered.filter(img => img.width && img.height && Math.abs(img.width - img.height) / Math.max(img.width, img.height) <= 0.05);
   if (typeFilter !== 'all') filtered = filtered.filter(img => img.mediaType === typeFilter);
-  if (sourceFilter) filtered = filtered.filter(img => img.source === SOURCE_LABELS[sourceFilter]);
+  // Filter by active source chips
+  const activeSourceNames = Object.keys(activeSources).filter(s => activeSources[s]).map(s => SOURCE_LABELS[s]);
+  filtered = filtered.filter(img => activeSourceNames.includes(img.source));
   return filtered;
-}
-
-function setSourceFilter(src) {
-  sourceFilter = (sourceFilter === src) ? null : src;
-  if (allItems.length > 0) reRender();
-}
-
-function clearSourceFilter() {
-  sourceFilter = null;
-  if (allItems.length > 0) reRender();
 }
 
 function buildBreakdown() {
   return Object.keys(sourceCounts)
     .filter(src => sourceCounts[src] > 0)
-    .map(src => {
-      const active = sourceFilter === src ? ' active-source' : '';
-      return `<button class="source-link${active}" onclick="setSourceFilter('${src}')">${SOURCE_LABELS[src] || src} ${sourceCounts[src]}</button>`;
-    })
+    .map(src => (SOURCE_LABELS[src] || src) + ' ' + sourceCounts[src])
     .join(' · ');
 }
 
@@ -696,12 +680,10 @@ function reRender() {
   }
   const breakdown = buildBreakdown();
   let countLabel;
-  if (sourceFilter) countLabel = '<strong>' + filtered.length + '</strong> images from ' + (SOURCE_LABELS[sourceFilter] || sourceFilter);
-  else if (licenseFilter === 'free') countLabel = '<strong>' + filtered.length + '</strong> of ' + allItems.length + ' images (attribution-free only)';
+  if (licenseFilter === 'free') countLabel = '<strong>' + filtered.length + '</strong> of ' + allItems.length + ' images (attribution-free only)';
   else if (licenseFilter === 'attribution') countLabel = '<strong>' + filtered.length + '</strong> of ' + allItems.length + ' images (attribution required only)';
-  else countLabel = '<strong>' + allItems.length + '</strong> images loaded';
-  const clearBtn = sourceFilter ? ' <button class="clear-filter" onclick="clearSourceFilter()">&#x2715; clear</button>' : '';
-  document.getElementById('resultsCount').innerHTML = countLabel + clearBtn + (breakdown ? ' &nbsp;—&nbsp; ' + breakdown : '');
+  else countLabel = '<strong>' + filtered.length + '</strong> images';
+  document.getElementById('resultsCount').innerHTML = countLabel + (breakdown ? ' &nbsp;—&nbsp; ' + breakdown : '');
 }
 
 // ---- Search (fresh) ----
@@ -717,7 +699,6 @@ async function doSearch() {
   pageState = Object.fromEntries(ALL_SOURCES.map(s => [s, 1]));
   exhausted = Object.fromEntries(ALL_SOURCES.map(s => [s, false]));
   sourceCounts = Object.fromEntries(ALL_SOURCES.map(s => [s, 0]));
-  sourceFilter = null;
   totalLoaded = 0;
 
   showLoading();
@@ -1051,12 +1032,10 @@ function updateUI(batchSize, q) {
   // Build per-source breakdown
   const breakdown = buildBreakdown();
   let countLabel;
-  if (sourceFilter) countLabel = '<strong>' + visibleCount + '</strong> images from ' + (SOURCE_LABELS[sourceFilter] || sourceFilter);
-  else if (licenseFilter === 'free') countLabel = '<strong>' + visibleCount + '</strong> of ' + totalLoaded + ' images (attribution-free only)';
+  if (licenseFilter === 'free') countLabel = '<strong>' + visibleCount + '</strong> of ' + totalLoaded + ' images (attribution-free only)';
   else if (licenseFilter === 'attribution') countLabel = '<strong>' + visibleCount + '</strong> of ' + totalLoaded + ' images (attribution required only)';
-  else countLabel = '<strong>' + totalLoaded + '</strong> images loaded';
-  const clearBtn = sourceFilter ? ' <button class="clear-filter" onclick="clearSourceFilter()">&#x2715; clear</button>' : '';
-  document.getElementById('resultsCount').innerHTML = countLabel + clearBtn + (breakdown ? ' &nbsp;—&nbsp; ' + breakdown : '');
+  else countLabel = '<strong>' + visibleCount + '</strong> images';
+  document.getElementById('resultsCount').innerHTML = countLabel + (breakdown ? ' &nbsp;—&nbsp; ' + breakdown : '');
 
   // Manage load-more button (reuse if exists)
   const anyMore = Object.keys(activeSources).some(src => activeSources[src] && !exhausted[src]);
