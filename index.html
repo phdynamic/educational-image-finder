@@ -910,10 +910,12 @@ async function fetchMet(q, page) {
   // On first page or new query, fetch all matching IDs and shuffle them
   if (page === 1 || metQuery !== q) {
     metQuery = q;
-    const searchRes = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/search?q=${encodeURIComponent(q)}&hasImages=true&isPublicDomain=true`);
+    const searchRes = await fetch(`https://collectionapi.metmuseum.org/public/collection/v1/search?q=${encodeURIComponent(q)}&hasImages=true`);
     if (!searchRes.ok) throw new Error('Met Museum: ' + searchRes.status);
     const searchData = await searchRes.json();
-    metObjectIDs = shuffle((searchData.objectIDs || []).slice());
+    metObjectIDs = searchData.objectIDs || [];
+    // Limit to first 200 IDs to avoid fetching thousands of objects
+    metObjectIDs = metObjectIDs.slice(0, 200);
   }
   // Slice the IDs for this page
   const start = (page - 1) * PER_SOURCE;
@@ -923,10 +925,10 @@ async function fetchMet(q, page) {
   const objs = await Promise.allSettled(ids.map(id =>
     fetch(`https://collectionapi.metmuseum.org/public/collection/v1/objects/${id}`).then(r => r.json())
   ));
-  // Deduplicate by image URL
+  // Filter to public domain with images, deduplicate by image URL
   const seen = new Set();
   const items = objs
-    .filter(r => r.status === 'fulfilled' && r.value.primaryImageSmall)
+    .filter(r => r.status === 'fulfilled' && r.value.primaryImageSmall && r.value.isPublicDomain)
     .filter(r => { const url = r.value.primaryImageSmall; if (seen.has(url)) return false; seen.add(url); return true; })
     .map(r => {
       const p = r.value;
